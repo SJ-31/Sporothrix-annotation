@@ -1,1 +1,14 @@
 repository_type: pipeline
+lint:
+  actions_awsfulltest: False
+  pipeline_todos: False
+  readme: False
+  files_exist:
+    - CODE_OF_CONDUCT.md
+    - assets/email_template.html
+    - assets/sendmail_template.txt
+    - assets/nf-core-testpipeline_logo_light.png
+  files_unchanged:
+    - assets/email_template.html
+    - CODE_OF_CONDUCT.md
+
