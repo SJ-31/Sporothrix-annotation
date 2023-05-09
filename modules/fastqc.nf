@@ -1,18 +1,19 @@
 
 
 process FASTQC {
-    publishDir "$", mode: 'symlink'
+    publishDir "$outdir/$run", pattern: "*.html", mode: 'copy'
 
     input:
-    tuple val(id), path(reads)
+    tuple val(run), path(reads)
     val(outdir)
     //
     output:
-
+    path("*.html"), emit: html
+    path("*.zip"), emit: zip
     //
     script:
     """
-
+    fastqc $reads
     """
     //
 }
