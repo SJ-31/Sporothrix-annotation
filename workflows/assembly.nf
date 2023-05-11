@@ -18,14 +18,14 @@ workflow assembly {
     raw
 
     main:
-    FASTQC_I(raw, params.fastqcOutdirI)
+    FASTQC_I(raw, params.outdirInitial) // Initial quality check
         .zip.collect().set { fastqcInitial_ch }
     MULTIQC_I(COMBINE_QC(fastqcInitial_ch), params.mqcOutdirI)
-    FASTP(raw, params.fastpOutdir)
+    FASTP(raw, params.outdirTrim) // Trim
         .set { fastp }
-    FASTQC_T(fastp.fastq, params.fastqcOutdirT)
+    FASTQC_T(fastp.fastq, params.outdirTrim) // Verify results of trimming
         .zip.collect().set { fastqcTrim_ch }
     MULTIQC_T(COMBINE_P(fastp.html.mix(fastp.json)
                         .mix(fastqcTrim_ch)
-                        .collect()), params.fastpOutdir)
+                        .collect()), params.mqcOutdirT)
 }

@@ -1,4 +1,5 @@
 workflow*
+busco_downloads/*
 .nextflow*
 work/
 data/
