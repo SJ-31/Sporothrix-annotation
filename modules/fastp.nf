@@ -1,5 +1,6 @@
 process FASTP {
     publishDir "$outdir/$run", mode: 'copy', pattern: "*html"
+
     input:
     tuple val(run), path(reads)
     val(outdir)
