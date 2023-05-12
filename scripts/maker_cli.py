@@ -1,11 +1,13 @@
+#!/usr/bin/env python
+
 import argparse
 import sys
 
 import numpy as np
 
 parser = argparse.ArgumentParser(description='Change maker control file'
-                                 'params with'
-                                 'command line arguments')
+                                'params with'
+                                'command line arguments')
 parser.add_argument('params', nargs='+', metavar='F_P',
                     help='F is the file the parameter is located in, '
                     'P the parameter (no spaces)\n'
@@ -52,7 +54,7 @@ def change_param(filename: str, text: list[str], params: list[str]) -> str:
 
 files: dict[str, list[str]] = {}
 for file in ['maker_evm.ctl', 'maker_exe.ctl',
-             'maker_opts.ctl', 'maker_bopts.ctl']:
+            'maker_opts.ctl', 'maker_bopts.ctl']:
     with open(file) as f:
         files[file] = np.array(f.readlines())
 

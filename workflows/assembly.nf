@@ -9,7 +9,9 @@ include { COMBINE as COMBINE_QC } from '../modules/combine'
 include { FASTP } from '../modules/fastp'
 include { COMBINE as COMBINE_P } from '../modules/combine'
 include { SEQKIT_STATS } from '../modules/seqkit'
-include { SPADES } from '../modules/spades'
+include { SPADES; EXTRACT_SPADES } from '../modules/spades'
+include { MEGAHIT; EXTRACT_MH } from '../modules/megahit'
+include { BUSCO } from '../modules/busco'
 
 /*
  *
@@ -30,6 +32,17 @@ workflow assembly {
     MULTIQC_T(COMBINE_P(fastp.html.mix(fastp.json)
                         .mix(fastqcTrim_ch)
                         .collect()), params.mqcOutdirT)
-    SPADES(fastp.fastq, params.spadesOut).view()
+    spades_ch = SPADES(fastp.fastq)
+    EXTRACT_SPADES(spades_ch, params.spadesOut)
+        .set{ spadesA_ch }
+    megahit_ch = MEGAHIT(fastp.fastq)
+    EXTRACT_MH(megahit_ch, params.megaOut)
+        .set { megahitA_ch }
+    // Quality assessment
+    // assembly_MH_ch.mix(assembly_S_ch).view()
+    BUSCO(spadesA_ch.mix(megahitA_ch), params.buscoOut).view()
 
+    emit:
+    spadesA_ch
+    megahitA_ch
 }

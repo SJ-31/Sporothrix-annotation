@@ -1,9 +1,6 @@
 process SPADES {
-    publishDir "$outdir", mode: 'symlink', pattern: "$run"
-
     input:
     tuple val(run), path(reads)
-    val(outdir)
     //
     output:
     tuple val("spades"), val(run), path(run)
@@ -18,15 +15,18 @@ process SPADES {
 }
 
 process EXTRACT_SPADES {
+    publishDir "$outdir", mode: 'symlink'
+
     input:
-    path(run)
+    tuple val(s), val(run), path(assembly)
+    val(outdir)
     //
     output:
-
+    tuple val("spades"), path("${run}_scaffolds.fasta")
     //
     script:
     """
-
+    cp $run/scaffolds.fasta ./${run}_scaffolds.fasta
     """
     //
 }

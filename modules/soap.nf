@@ -15,7 +15,7 @@ process SOAPDENOVO {
     'q1=${reads[0]}' \
     'q2=${reads[1]}' \
     > soap.config
-   
+
     """
     //
 }
