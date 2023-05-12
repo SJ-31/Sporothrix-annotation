@@ -11,7 +11,7 @@ include { COMBINE as COMBINE_P } from '../modules/combine'
 include { SEQKIT_STATS } from '../modules/seqkit'
 include { SPADES; EXTRACT_SPADES } from '../modules/spades'
 include { MEGAHIT; EXTRACT_MH } from '../modules/megahit'
-include { BUSCO } from '../modules/busco'
+include { BUSCO; EXTRACT_BUSCO; MULTIQC_B } from '../modules/busco'
 
 /*
  *
@@ -39,8 +39,17 @@ workflow assembly {
     EXTRACT_MH(megahit_ch, params.megaOut)
         .set { megahitA_ch }
     // Quality assessment
-    // assembly_MH_ch.mix(assembly_S_ch).view()
-    BUSCO(spadesA_ch.mix(megahitA_ch), params.buscoOut).view()
+    EXTRACT_BUSCO(
+        BUSCO(spadesA_ch.mix(megahitA_ch), params.buscoOut)
+    ).branch{
+        spades: it =~ /spades/
+        megahit: it =~ /megahit/
+    }.set { busco_ch }
+    MULTIQC_B(busco_ch.spades.collect()
+            .mix(busco_ch.megahit.collect()),
+            params.mqcOutdirA)
+    // MULTIQC_B(busco_ch, params.mqcOutdirA)
+
 
     emit:
     spadesA_ch

@@ -15,7 +15,7 @@ process SPADES {
 }
 
 process EXTRACT_SPADES {
-    publishDir "$outdir", mode: 'symlink'
+    publishDir "$outdir", mode: 'copy'
 
     input:
     tuple val(s), val(run), path(assembly)

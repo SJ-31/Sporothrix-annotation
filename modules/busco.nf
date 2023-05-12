@@ -28,11 +28,36 @@ process EXTRACT_BUSCO {
     path("*")
     //
     output:
+    path("short_summary.*.txt")
+    //
+    shell:
+    '''
+    cp */short_summary.*.txt .
+    '''
+    //
+}
 
+process MULTIQC_B {
+    publishDir "$outdir", pattern: "*html", mode: 'copy'
+
+    input:
+    path(files)
+    val(outdir)
+    //
+    output:
+    path("*.html")
     //
     script:
+    def assembler = (files[0] =~ /\d_(.*).txt/)[0][1]
     """
-    cd
+    rename .
+    mkdir $assembler
+    ls --ignore=$assembler | xargs -I{} mv {} $assembler/
+    multiqc $assembler
+    mv *.html ${assembler}.html
     """
     //
 }
+
+
+

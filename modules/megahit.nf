@@ -17,7 +17,7 @@ process MEGAHIT {
 }
 
 process EXTRACT_MH {
-    publishDir "$outdir", mode: 'symlink'
+    publishDir "$outdir", mode: 'copy'
 
     input:
     path(run)
@@ -25,7 +25,7 @@ process EXTRACT_MH {
     //
     output:
     tuple val("megahit"), path("${run}_contigs.fasta")
-    // Be sure not specify the same values or else there will be a mismatch error somewhere
+    //
     script:
     """
     cp $run/final.contigs.fa ./${run}_contigs.fasta
