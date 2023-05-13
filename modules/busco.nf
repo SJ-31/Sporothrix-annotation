@@ -38,7 +38,7 @@ process EXTRACT_BUSCO {
 }
 
 process MULTIQC_B {
-    publishDir "$outdir", pattern: "*html", mode: 'copy'
+    publishDir "$outdir/$round", pattern: "*html", mode: 'copy'
 
     input:
     path(files)
@@ -50,7 +50,6 @@ process MULTIQC_B {
     script:
     def assembler = (files[0] =~ /\d_(.*).txt/)[0][1]
     """
-    rename .
     mkdir $assembler
     ls --ignore=$assembler | xargs -I{} mv {} $assembler/
     multiqc $assembler

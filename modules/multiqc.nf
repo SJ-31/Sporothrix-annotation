@@ -1,5 +1,5 @@
 process MULTIQC {
-    publishDir "$outdir", pattern: "*html", mode: 'copy'
+    publishDir "$outdir/$round", pattern: "*html", mode: 'copy'
     input:
     path(combined)
     val(outdir)
