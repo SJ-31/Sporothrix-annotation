@@ -1,5 +1,6 @@
 process MAKER {
     input:
+    args
 
     //
     output:
