@@ -1,18 +1,61 @@
 process MAKER {
     input:
-    args
-
-    //
+    tuple val(name), path(files)
+    val(args)
+    val(first) // Controls whether or not maker is trained on the genome or the gff file from a previous round
     output:
-
+    tuple val(name), path("*.output")
     //
     script:
+    train_on = "opts_genome=${files[0]}"
+    if (first) {
+    predictors = "opts_gmhmm=${files[1]}"
+    }
+    else{
+        predictors = """
+            opts_snaphmm=${files[1]} \
+            opts_augustus_species=${files[2]} \
+            opts_est_gff=${files[3]} \
+            opts_protein_gff=${files[4]} \
+            opts_rm_gff=${files[5]}
+            """
+        // genemarks = "opts_gmhmm=$current[1]" // Maybe won't need genemarks in the second round since it hasn't been trained on anything else
+    }
     """
     maker -CTL
-    maker_cli.py \
-    est2genome=1 \
-    protein2genome=2
-    maker
+    maker_cli.py ${args} \
+    ${train_on} \
+    ${predictors}
+    maker -fix_nucleotides
     """
+    //
+}
+
+process GET_GFF {
+    input:
+    tuple val(name), path(maker_out)
+    //
+    output:
+    tuple val(name), path("0-${name}.all.gff"), emit: all
+    tuple (val(name), tuple(path("*est2genome.gff"),
+                                path("*protein2genome.gff"),
+                                path("*repeats.gff"))), emit: evidence
+    shell:
+    '''
+    cd 0-!{name}.maker.output
+    gff3_merge 0-!{name}_master_datastore_index.log \
+    -d !{name}.all.gff
+    gff3_merge -n -s -d 0-!{name}_master_datastore_index.log \
+    > !{name}.all.maker.noseq.gff
+    # transcript alignments
+    awk '{ if ($2 == "est2genome") print $0 }' \
+    !{name}.all.maker.noseq.gff > 3-!{name}.all.maker.est2genome.gff
+    # protein alignments
+    awk '{ if ($2 == "protein2genome") print $0 }' \
+    !{name}.all.maker.noseq.gff > 4-!{name}.all.maker.protein2genome.gff
+    # Repeat alignments
+    awk '{ if ($2 ~ "repeat") print $0 }' \
+    !{name}.all.maker.noseq.gff > 5-!{name}.all.maker.repeats.gff
+    '''
     //
 }
