@@ -32,28 +32,24 @@ process MAKER {
 }
 
 process GET_GFF {
+    debug true
     input:
-    tuple val(name), path(maker_out)
+    tuple (val(name), (path(maker_out)))
     //
     output:
     tuple val(name), path("0-${name}.all.gff"), emit: all
-    tuple (val(name), tuple(path("*est2genome.gff"),
-                                path("*protein2genome.gff"),
-                                path("*repeats.gff"))), emit: evidence
+    tuple val(name), path("*{est2genome,repeats,protein2genome}.gff"), emit: evidence
+
     shell:
     '''
-    cd 0-!{name}.maker.output
-    gff3_merge 0-!{name}_master_datastore_index.log \
-    -d !{name}.all.gff
+    cp -r *output/* .
+    gff3_merge -d 0-!{name}_master_datastore_index.log
     gff3_merge -n -s -d 0-!{name}_master_datastore_index.log \
     > !{name}.all.maker.noseq.gff
-    # transcript alignments
     awk '{ if ($2 == "est2genome") print $0 }' \
     !{name}.all.maker.noseq.gff > 3-!{name}.all.maker.est2genome.gff
-    # protein alignments
     awk '{ if ($2 == "protein2genome") print $0 }' \
     !{name}.all.maker.noseq.gff > 4-!{name}.all.maker.protein2genome.gff
-    # Repeat alignments
     awk '{ if ($2 ~ "repeat") print $0 }' \
     !{name}.all.maker.noseq.gff > 5-!{name}.all.maker.repeats.gff
     '''

@@ -22,9 +22,8 @@ workflow annotation {
         .set { r1_ch }
     MAKER_R1(r1_ch, params.makerR1, true)
         .set { makerR1 }
-    makerR1.view()
-    // round1_out = GET_GFF(makerR1)
-    // SNAP(round1_out.all)
-    // round1.view()
+    round1_out = GET_GFF(makerR1)
+    round1_out.evidence.flatten().collect().view()
+    // SNAP(round1_out.all) //Todo: Need to extract the datastore file
 
 }
