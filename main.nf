@@ -19,6 +19,8 @@ spades = "$params.results/assembly/3-spades/*"
 testing = "$params.results/assembly/test_annotate/*"
 
 assembly_ch = Channel.fromPath(
+    // "$megahit",
+    // "$spades",
     "$testing")
     .map {it -> [ it.baseName[2..-1], it ]} // Remove the prefix for sorting purposes
 
