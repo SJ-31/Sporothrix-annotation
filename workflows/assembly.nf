@@ -12,6 +12,7 @@ include { SEQKIT_STATS } from '../modules/seqkit'
 include { SPADES; EXTRACT_SPADES } from '../modules/spades'
 include { MEGAHIT; EXTRACT_MH } from '../modules/megahit'
 include { BUSCO; EXTRACT_BUSCO; MULTIQC_B } from '../modules/busco'
+include { QUAST } from '../modules/quast'
 
 /*
  *
@@ -29,9 +30,6 @@ workflow assembly {
         .set { fastp }
     FASTQC_T(fastp.fastq, params.outdirTrim) // Verify results of trimming
         .zip.collect().set { fastqcTrim_ch }
-    COMBINE_P(fastp.html.mix(fastp.json)
-                        .mix(fastqcTrim_ch)
-                        .collect())
     spades_ch = SPADES(fastp.fastq)
     EXTRACT_SPADES(spades_ch, params.spadesOut)
         .set{ spadesA_ch }
@@ -45,11 +43,17 @@ workflow assembly {
         spades: it =~ /spades/
         megahit: it =~ /megahit/
     }.set { busco_ch }
-    // MULTIQC_B(busco_ch.spades.collect() //TODO: Fix multiqc
-    //         .mix(busco_ch.megahit.collect()),
-    //         params.mqcOutdirA)
 
     emit:
     spadesA_ch
     megahitA_ch
+}
+
+workflow assess {
+    take:
+    assemblies
+
+    main:
+    QUAST(assemblies, params.quastOut, params.quastRef)
+
 }

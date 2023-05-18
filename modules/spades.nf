@@ -14,6 +14,23 @@ process SPADES {
     //
 }
 
+process RNA_SPADES {
+    input:
+    tuple val(run), path(reads)
+    //
+    output:
+    tuple val("spades"), val(run), path(run)
+    //
+    script:
+    """
+    rnaspades.py \
+    -o $run \
+    --pe-1 1 ${reads[0]} --pe-2 1 ${reads[1]} \
+    """
+    //
+}
+
+
 process EXTRACT_SPADES {
     publishDir "$outdir", mode: 'copy'
 
