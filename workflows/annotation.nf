@@ -7,7 +7,7 @@ include { MAKER as MAKER_R2 } from "../modules/maker"
 include { MAKER as MAKER_R3 } from "../modules/maker"
 include { SNAP } from "../modules/snap"
 include { GENEMARKS_ES } from "../modules/genemarksES"
-include { AUGUSTUS } from "../modules/augustus"
+include { AUGUSTUS; AUGUSTUS_MAKER } from "../modules/augustus"
 
 /*
  * Workflow
@@ -26,9 +26,17 @@ workflow annotation {
     round1_out = GET_GFF(makerR1)
     round1_out.evidence.transpose()
         .set { r1_evidence_ch }
-    snap1_ch = SNAP(round1_out.all, '1').hmm
-    aug1_ch = AUGUSTUS(round1_out.all, '1')
+
+    // Train predictors
+    snap1_ch = SNAP(round1_out.all, '1', params.outdirAnnotate).hmm
+    assemblies.mix(round1_out.all).groupTuple(sort: true)
+        .set { to_aug1 }
+    aug1_ch = AUGUSTUS_MAKER(to_aug1, '1', params.outdirAnnotate)
     assemblies.mix(r1_evidence_ch).mix(snap1_ch).mix(aug1_ch)
-        .groupTuple(sort: true).view()
+        .groupTuple(sort: true)
+        .set { r2_ch }
+
+    // Second round
+    // MAKER_R2(r2_ch, params.makerR2, false)
 
 }

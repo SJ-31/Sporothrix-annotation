@@ -1,9 +1,10 @@
 process SNAP {
-    publishDir "$params.outdirAnnotate/$name/$round/", mode: 'symlink', pattern: "*.log"
+    publishDir "$outdir/$name/$round/", mode: 'copy', pattern: "*.log"
 
     input:
     tuple val(name), path(gff)
     val(round)
+    val(outdir)
     //
     output:
     tuple val(name), path("1-*snap_hmm"), emit: hmm
