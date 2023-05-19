@@ -16,9 +16,6 @@ params.results = "$projectDir/results"
 /*
  * Assembly file channels
  */
-megahit = "$params.results/assembly/3-megahit/*"
-spades = "$params.results/assembly/3-spades/*"
-testing = "$params.results/assembly/test_annotate/*"
 to_annotate = "$params.results/assembly/to_annotate/*"
 
 assembly_ch = Channel.fromPath(
