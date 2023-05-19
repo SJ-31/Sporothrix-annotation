@@ -47,3 +47,20 @@ process EXTRACT_SPADES {
     """
     //
 }
+
+process EXTRACT_RNASPADES {
+    publishDir "$outdir", mode: 'copy'
+
+    input:
+    tuple val(s), val(run), path(assembly)
+    val(outdir)
+    //
+    output:
+    tuple val("spades"), path("${run}_transcripts.fasta")
+    //
+    script:
+    """
+    cp $run/transcripts.fasta ./${run}_transcripts.fasta
+    """
+    //
+}

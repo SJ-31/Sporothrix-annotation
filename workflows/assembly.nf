@@ -38,7 +38,7 @@ workflow assembly {
         .set { megahitA_ch }
     // Quality assessment
     EXTRACT_BUSCO(
-        BUSCO(spadesA_ch.mix(megahitA_ch), params.buscoOut)
+        BUSCO(spadesA_ch.mix(megahitA_ch), 'genome', params.buscoOut)
     ).branch{
         spades: it =~ /spades/
         megahit: it =~ /megahit/
@@ -54,6 +54,9 @@ workflow assess {
     assemblies
 
     main:
-    QUAST(assemblies, params.quastOut, params.quastRef)
+    assemblies.flatten().branch {
+        fasta: it =~/fasta/
+    }.set { genomes }
+    QUAST(genomes.fasta.collect(), params.quastOut, params.quastRef, params.quastRefF)
 
 }

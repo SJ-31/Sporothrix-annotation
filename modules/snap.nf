@@ -13,7 +13,7 @@ process SNAP {
     script:
     """
     maker2zff $gff
-    fathom -categorize 100 *.ann *.dna
+    fathom -categorize 1000 *.ann *.dna
     fathom genome.ann genome.dna > SNAP-gene-stats.log 2>&1
     fathom genome.ann genome.dna > SNAP-validate.log 2>&1
     fathom -export 1000 -plus uni.*

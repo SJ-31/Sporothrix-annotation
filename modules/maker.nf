@@ -14,12 +14,12 @@ process MAKER {
     else{
         predictors = """
             opts_snaphmm=${files[1]} \
-            opts_augustus_species=${files[2]} \
             opts_est_gff=${files[3]} \
             opts_protein_gff=${files[4]} \
             opts_rm_gff=${files[5]}
             """
         // genemarks = "opts_gmhmm=$current[1]" // Maybe won't need genemarks in the second round since it hasn't been trained on anything else
+        // opts_augustus_species=${files[2]} // Since
     }
     """
     maker -CTL
@@ -32,18 +32,24 @@ process MAKER {
 }
 
 process GET_GFF {
+    publishDir "$outdir/$name/$round/", mode: 'copy', pattern: "*.all.gff"
+    publishDir "$outdir/$name/$round/", mode: 'copy', pattern: "*.fasta"
+
     debug true
     input:
     tuple (val(name), (path(maker_out)))
+    val(round)
     //
     output:
     tuple val(name), path("0-${name}.all.gff"), emit: all
     tuple val(name), path("*{est2genome,repeats,protein2genome}.gff"), emit: evidence
+    tuple val(name), path("*.fasta"), emit: fastas
 
     shell:
     '''
     cp -r *output/* .
     gff3_merge -d 0-!{name}_master_datastore_index.log
+    fasta_merge -d 0-!{name}_master_datastore_index.log
     gff3_merge -n -s -d 0-!{name}_master_datastore_index.log \
     > !{name}.all.maker.noseq.gff
     awk '{ if ($2 == "est2genome") print $0 }' \

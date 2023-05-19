@@ -4,6 +4,7 @@ process BUSCO {
 
     input:
     tuple val(assembler), path(assembly)
+    val(mode)
     val(outdir)
     //
     output:
@@ -17,7 +18,7 @@ process BUSCO {
     busco -i $assembly \
     -l sordariomycetes_odb10 \
     -o $run\
-    -m genome \
+    -m $mode \
     --offline \
     --download_path $projectDir/busco_downloads
     """
