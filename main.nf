@@ -11,6 +11,8 @@ params.rna = "$projectDir/data/raw_rna"
 
 params.results = "$projectDir/results"
 // raw_ch = Channel.fromFilePairs("$params.raw/S*_R{1,2}_001.fastq.gz")
+
+// Fri 19 May, 2023 Assembled SRR9602168
 rna_ch = Channel.fromFilePairs("$params.rna/*_{1,2}.fastq")
 
 
@@ -41,7 +43,7 @@ include { rnaseq } from './workflows/rnaseq'
  */
 workflow {
     // assembly(raw_ch) Completed for now, Mon 15 May, 2023
-    // rnaseq(rna_ch)
+    // rnaseq(rna_ch) Completed Fri 19 May, 2023
     // annotation(assembly_ch)
-    assess(assess_ch)
+    // assess(assess_ch)
 }

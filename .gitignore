@@ -11,3 +11,4 @@ testing*
 *.pyc
 testzone/*
 info/*
+*gatk*
