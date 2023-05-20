@@ -30,12 +30,15 @@ assess_ch = Channel.fromPath(
     "$to_annotate")
     .map {it -> [ it.baseName[2..-1], it ]} // Add a prefix for sorting purposes
 
+
+
 /*
  * Workflow imports
  */
 
 include { assembly; assess } from './workflows/assembly'
 include { annotation } from './workflows/annotation'
+include { repeats } from './workflows/repeatlibrary'
 include { rnaseq } from './workflows/rnaseq'
 
 /*
@@ -44,6 +47,8 @@ include { rnaseq } from './workflows/rnaseq'
 workflow {
     // assembly(raw_ch) Completed for now, Mon 15 May, 2023
     // rnaseq(rna_ch) Completed Fri 19 May, 2023
+    repeats()
     // annotation(assembly_ch)
     // assess(assess_ch)
+
 }
