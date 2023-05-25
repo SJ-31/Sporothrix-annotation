@@ -1,0 +1,9 @@
+{
+    "files.exclude": {
+        ".prettierignore": true,
+        ".prettierrc.yml": true,
+        ".pre-commit-config.yaml": true,
+        ".nf-core.yml": true
+    },
+    "workspace.isHidden": true
+}

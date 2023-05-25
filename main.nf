@@ -23,7 +23,7 @@ include { assembly; assess } from './workflows/assembly'
 include { annotation } from './workflows/annotation'
 include { repeats } from './workflows/repeatlibrary'
 include { rnaseq } from './workflows/rnaseq'
-// include { scaffold } from './workflows/finishing'
+include { scaffold } from './workflows/finishing'
 /*
  * Assembly file channels
  */
@@ -38,15 +38,26 @@ Channel.fromPath(
 assess_ch = Channel.fromPath(
     "$to_annotate")
     .map {it -> [ it.baseName[2..-1], it ]} // Add a prefix for sorting purposes
+
+/*
+ * Finishing channels
+ */
+
+Channel.fromPath("$projectDir/results/annotate/*")
+    .map { it -> [ (it =~ /.*-(.*)_.*/)[0][1], it ]}
+    .set { contigs_ch }
+contigs_ch.combine(raw_ch, by: 0)
+    .set { contigs_reads_ch }
+
 /*
  *
  */
 workflow {
-    // assembly(raw_ch) Completed for now, Mon 15 May, 2023
-    // rnaseq(rna_ch) Completed Fri 19 May, 2023
+    // assembly(raw_ch) // Completed for now, Mon 15 May, 2023
+    // rnaseq(rna_ch) // Completed Fri 19 May, 2023
     // repeats() Completed Sun 21 May, 2023
-    // scaffold() Performed elsewhere
-    annotation(assembly_ch)
+    scaffold(contigs_ch, contigs_reads_ch)
+    // annotation(assembly_ch)
     // assess(assess_ch)
 
 }
