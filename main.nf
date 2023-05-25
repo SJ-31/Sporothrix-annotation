@@ -15,23 +15,6 @@ params.results = "$projectDir/results"
 // Fri 19 May, 2023 Assembled SRR9602168
 rna_ch = Channel.fromFilePairs("$params.rna/*_{1,2}.fastq")
 
-
-/*
- * Assembly file channels
- */
-current = "$params.results/assembly/annotate-current/*"
-to_annotate = "$params.results/assembly/annotate/*"
-
-assembly_ch = Channel.fromPath(
-    "$current")
-    .map {it -> [ it.baseName[2..-1], it ]} // Add a prefix for sorting purposes
-
-assess_ch = Channel.fromPath(
-    "$to_annotate")
-    .map {it -> [ it.baseName[2..-1], it ]} // Add a prefix for sorting purposes
-
-
-
 /*
  * Workflow imports
  */
@@ -40,15 +23,30 @@ include { assembly; assess } from './workflows/assembly'
 include { annotation } from './workflows/annotation'
 include { repeats } from './workflows/repeatlibrary'
 include { rnaseq } from './workflows/rnaseq'
+// include { scaffold } from './workflows/finishing'
+/*
+ * Assembly file channels
+ */
+current = "$params.results/assembly/annotate-current/*"
+to_annotate = "$params.results/assembly/annotate/*"
 
+Channel.fromPath(
+    "$current")
+    .map {it -> [ it.baseName[2..-1], it ]}
+    .set { assembly_ch } // Add a prefix for sorting purposes
+
+assess_ch = Channel.fromPath(
+    "$to_annotate")
+    .map {it -> [ it.baseName[2..-1], it ]} // Add a prefix for sorting purposes
 /*
  *
  */
 workflow {
     // assembly(raw_ch) Completed for now, Mon 15 May, 2023
     // rnaseq(rna_ch) Completed Fri 19 May, 2023
-    repeats()
-    // annotation(assembly_ch)
+    // repeats() Completed Sun 21 May, 2023
+    // scaffold() Performed elsewhere
+    annotation(assembly_ch)
     // assess(assess_ch)
 
 }

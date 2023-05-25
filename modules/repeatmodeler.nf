@@ -14,18 +14,18 @@ process REPEATMODELER {
 }
 
 process GET_REPEAT {
-    publishDir "$outdir/species", mode: 'copy'
+    publishDir "$outdir/$species", mode: 'copy'
 
     input:
     tuple val(species), path(rm)
     val(outdir)
     //
     output:
-    val("*.fa*")
+    path("*")
     //
     script:
     """
-    cp -r RM*/*.fa* .
+    cp -r RM*/* .
     """
     //
 }

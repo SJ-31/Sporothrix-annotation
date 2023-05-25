@@ -1,4 +1,5 @@
 workflow*
+presentation/*
 *.log
 busco_downloads/*
 .nextflow*
@@ -9,6 +10,7 @@ results/
 testing/
 testing*
 *.pyc
+tests/*
 testzone/*
 info/*
 *gatk*
