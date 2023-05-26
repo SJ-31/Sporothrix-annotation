@@ -1,21 +1,4 @@
 /*
- * Raw files for assembly, if you don't split up the dataset, will run out of memory
- */
-// params.raw = "$projectDir/data/raw1-4" // Completed Sat 13 May, 2023
-// params.raw = "$projectDir/data/raw5-7" // Completed Sat 13 May, 2023
-// params.raw = "$projectDir/data/raw8" // Completed Sun 14 May, 2023
-// params.raw = "$projectDir/data/raw9-10" // Completed Sat 13 May, 2023
-// params.raw = "$projectDir/data/raw11-12" // Completed Sun 15 May, 2023
-// params.raw = "$projectDir/data/raw13-16" // Completed Sat 13 May, 2023
-params.rna = "$projectDir/data/raw_rna"
-
-params.results = "$projectDir/results"
-// raw_ch = Channel.fromFilePairs("$params.raw/S*_R{1,2}_001.fastq.gz")
-
-// Fri 19 May, 2023 Assembled SRR9602168
-rna_ch = Channel.fromFilePairs("$params.rna/*_{1,2}.fastq")
-
-/*
  * Workflow imports
  */
 
@@ -24,6 +7,25 @@ include { annotation } from './workflows/annotation'
 include { repeats } from './workflows/repeatlibrary'
 include { rnaseq } from './workflows/rnaseq'
 include { scaffold } from './workflows/finishing'
+
+/*
+ * Raw files for assembly, if you don't split up the dataset, will run out of memory
+ */
+params.raw = "$projectDir/data/$params.to_assemble"
+params.rna = "$projectDir/data/raw_rna"
+params.results = "$projectDir/results"
+
+raw_ch = Channel.fromFilePairs("$params.raw/S*_R{1,2}_001.fastq.gz")
+rna_ch = Channel.fromFilePairs("$params.rna/*_{1,2}.fastq")
+
+/*
+ * Repeat library channels
+ */
+
+Channel.fromPath("$projectDir/data/reference/genomes/for_repeats/*")
+    .map { it -> [ it.baseName, it ]}
+    .set { genome_ch }
+
 /*
  * Assembly file channels
  */
@@ -43,21 +45,35 @@ assess_ch = Channel.fromPath(
  * Finishing channels
  */
 
-Channel.fromPath("$projectDir/results/annotate/*")
+Channel.fromPath("$projectDir/results/assembly/annotate/*")
     .map { it -> [ (it =~ /.*-(.*)_.*/)[0][1], it ]}
     .set { contigs_ch }
+Channel.fromPath("$projectDir/results/assembly/annotate-current/*")
+    .map { it -> [ (it =~ /.*-(.*)_.*/)[0][1], it ]}
+    .set { test_ch }
 contigs_ch.combine(raw_ch, by: 0)
     .set { contigs_reads_ch }
-
+Channel.fromPath("$projectDir/data/reference/genomes/scaffold_ref/*")
+    .collect().set { ref_ch }
+Channel.fromPath(params.genomes)
+    .map { it -> it.baseName + '.fasta,2' }
+    .collectFile(name: 'ref.txt', newLine: true )
+    .set { ref_config }
 /*
  *
  */
 workflow {
-    // assembly(raw_ch) // Completed for now, Mon 15 May, 2023
-    // rnaseq(rna_ch) // Completed Fri 19 May, 2023
-    // repeats() Completed Sun 21 May, 2023
-    scaffold(contigs_ch, contigs_reads_ch)
-    // annotation(assembly_ch)
-    // assess(assess_ch)
-
+    if ( params.assemble_genome )
+        assembly(raw_ch)
+    if ( params.assess_assemblies )
+        assess(assess_ch)
+    if ( params.assemble_transcriptome )
+        rnaseq(rna_ch)
+    if ( params.get_replib )
+        repeats(genome_ch)
+    if ( params.scaffold_contigs )
+        // scaffold(contigs_ch, contigs_reads_ch, ref_ch )
+        scaffold(test_ch, contigs_reads_ch, ref_ch ) // For testing purposes
+    if ( params.annotate_scaffold )
+        annotation(assembly_ch)
 }

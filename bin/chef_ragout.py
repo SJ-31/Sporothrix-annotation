@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import sys
 
@@ -7,7 +7,7 @@ query = params[0]
 references = params[1:]
 
 recipe = []
-recipe.append(f'.target = {query[:query.find(".")]}\n')
+recipe.append(f'.target = {query[:query.find("_")]}\n')
 ref_list = '.references = '
 ref_list += ','.join([r.replace(".fasta", "") for r in references])
 recipe.extend([ref_list, '\n\n', f'{query} = ./{query}\n'])

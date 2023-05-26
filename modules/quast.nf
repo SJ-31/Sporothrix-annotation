@@ -6,6 +6,7 @@ process QUAST {
     val(outdir)
     path(ref_genome)
     path(ref_genes)
+    val(args)
     //
     output:
     path("*")
@@ -15,7 +16,8 @@ process QUAST {
     quast.py $assemblies \
     --fungus \
     -r $ref_genome \
-    -g $ref_genes
+    -g $ref_genes \
+    $args
     """
     //
 }

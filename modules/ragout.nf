@@ -8,16 +8,30 @@ process RAGOUT {
     val(outdir)
     //
     output:
-    path("${name}_rag") //todo: add path
+    path("${name}_rag")
     //
     script:
     """
-    echo ".references = $reference.baseName" > recipe.rcp
-    echo ".target = $contigs.baseName\n" >> recipe.rcp
-    echo "$contigs = ./$contigs" >> recipe.rcp
-    echo "$reference = ./$reference" >> recipe.rcp
+    chef_ragout.py $contigs $reference
     ragout recipe.rcp \
     -o ${name}_rag
+    """
+    //
+}
+
+process EXTRACT_RAGOUT {
+    publishDir "$outdir/ragout", mode: 'copy'
+
+    input:
+    tuple val(name), path(scaffolds)
+    val(outdir)
+    //
+    output:
+    path("${name}.fasta")
+    //
+    script:
+    """
+    cp scaffolds/${name}_scaffolds.fasta .
     """
     //
 }

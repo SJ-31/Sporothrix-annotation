@@ -15,10 +15,12 @@ process REPEATMODELER {
 
 process GET_REPEAT {
     publishDir "$outdir/$species", mode: 'copy'
+    publishDir "$outdir2", mode: 'copy', pattern: "${species}_RM.fa.classified"
 
     input:
     tuple val(species), path(rm)
     val(outdir)
+    val(outdir2)
     //
     output:
     path("*")
@@ -26,6 +28,7 @@ process GET_REPEAT {
     script:
     """
     cp -r RM*/* .
+    mv consensi.fa.classified ${species}_RM.fa.classified
     """
     //
 }
