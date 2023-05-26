@@ -1,6 +1,6 @@
-process RAGOUT {
-    conda "/home/sc31/Bio_SDD/miniconda3/envs/ragout"
-    publishDir "$outdir/ragout"
+process RAGTAG {
+    conda "/home/sc31/Bio_SDD/miniconda3/envs/ragtag"
+    publishDir "$outdir/ragtag"
 
     input:
     tuple val(name), path(contigs)
@@ -12,9 +12,6 @@ process RAGOUT {
     //
     script:
     """
-    chef_ragout.py $contigs $reference
-    ragout recipe.rcp \
-    -o ${name}_rag
     """
     //
 }

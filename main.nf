@@ -6,7 +6,7 @@ include { assembly; assess } from './workflows/assembly'
 include { annotation } from './workflows/annotation'
 include { repeats } from './workflows/repeatlibrary'
 include { rnaseq } from './workflows/rnaseq'
-include { scaffold } from './workflows/finishing'
+include { scaffold; assess_scaffolds } from './workflows/finishing'
 
 /*
  * Raw files for assembly, if you don't split up the dataset, will run out of memory
@@ -72,8 +72,10 @@ workflow {
     if ( params.get_replib )
         repeats(genome_ch)
     if ( params.scaffold_contigs )
-        // scaffold(contigs_ch, contigs_reads_ch, ref_ch )
-        scaffold(test_ch, contigs_reads_ch, ref_ch ) // For testing purposes
+        scaffold(contigs_ch, contigs_reads_ch, ref_ch )
+        // scaffold(test_ch, contigs_reads_ch, ref_ch ) // For testing purposes
+    if ( params.assess_scaffolds )
+        assess_scaffolds()
     if ( params.annotate_scaffold )
         annotation(assembly_ch)
 }

@@ -1,5 +1,5 @@
 process QUAST {
-    publishDir "$outdir/$assembler", mode: 'copy'
+    publishDir "$outdir/", mode: 'copy'
 
     input:
     path(assemblies)
