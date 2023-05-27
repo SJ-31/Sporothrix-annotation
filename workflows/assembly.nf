@@ -28,14 +28,15 @@ workflow assembly {
     COMBINE_QC(fastqcInitial_ch)
     FASTP(raw, params.outdirTrim) // Check
         .set { fastp }
-    FASTQC_T(fastp.fastq, params.outdirTrim) // Verify results of trimming
-        .zip.collect().set { fastqcTrim_ch }
-    spades_ch = SPADES(fastp.fastq)
-    EXTRACT_SPADES(spades_ch, params.spadesOut)
-        .set{ spadesA_ch }
+    BBDUK(fastp.fastq, params.mtDNA,
+            params.bbduk_args, params.bbdukOut)
+    // FASTQC_T(fastp.fastq, params.outdirTrim) // Verify results of trimming
+    //     .zip.collect().set { fastqcTrim_ch }
+    // spades_ch = SPADES(fastp.fastq)
+    // EXTRACT_SPADES(spades_ch, params.spadesOut)
+    //     .set{ spadesA_ch }
     megahit_ch = MEGAHIT(fastp.fastq)
     EXTRACT_MH(megahit_ch, params.megaOut)
-        .set { megahitA_ch }
     // Quality assessment
 }
 

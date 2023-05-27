@@ -27,10 +27,12 @@ process EXTRACT_RAGOUT {
     val(outdir)
     //
     output:
-    path("*.fasta")
+    tuple val(name), path("*.fasta")
     //
+    exec:
+    name = scaffolds.baseName.replaceAll(/_.*/, '')
+
     script:
-    def name = scaffolds.baseName.replaceAll(/_.*/, '')
     """
     cp $scaffolds/*_scaffolds.fasta .
     """

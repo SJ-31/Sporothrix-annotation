@@ -11,7 +11,7 @@ include { scaffold; assess_scaffolds } from './workflows/finishing'
 /*
  * Raw files for assembly, if you don't split up the dataset, will run out of memory
  */
-params.raw = "$projectDir/data/$params.to_assemble"
+params.raw = "$projectDir/data/$params.to_assemble/*"
 params.rna = "$projectDir/data/raw_rna"
 params.results = "$projectDir/results"
 
@@ -27,21 +27,6 @@ Channel.fromPath("$projectDir/data/reference/genomes/for_repeats/*")
     .set { genome_ch }
 
 /*
- * Assembly file channels
- */
-current = "$params.results/assembly/annotate-current/*"
-to_annotate = "$params.results/assembly/annotate/*"
-
-Channel.fromPath(
-    "$current")
-    .map {it -> [ it.baseName[2..-1], it ]}
-    .set { assembly_ch } // Add a prefix for sorting purposes
-
-assess_ch = Channel.fromPath(
-    "$to_annotate")
-    .map {it -> [ it.baseName[2..-1], it ]} // Add a prefix for sorting purposes
-
-/*
  * Finishing channels
  */
 
@@ -50,7 +35,7 @@ Channel.fromPath("$projectDir/results/assembly/annotate/*")
     .set { contigs_ch }
 Channel.fromPath("$projectDir/results/assembly/annotate-current/*")
     .map { it -> [ (it =~ /.*-(.*)_.*/)[0][1], it ]}
-    .set { test_ch }
+    .set { test_ch } // The testing channel
 contigs_ch.combine(raw_ch, by: 0)
     .set { contigs_reads_ch }
 Channel.fromPath("$projectDir/data/reference/genomes/scaffold_ref/*")
@@ -59,6 +44,17 @@ Channel.fromPath(params.genomes)
     .map { it -> it.baseName + '.fasta,2' }
     .collectFile(name: 'ref.txt', newLine: true )
     .set { ref_config }
+
+/*
+ * Annotation channels
+ */
+annotation = "$params.results/assembly/7-aligned/$params.current/*"
+
+Channel.fromPath(
+    "$annotation")
+    .map {it -> [ it.baseName[2..-1], it ]}
+    .set { assembly_ch } // Add a prefix for sorting purposes
+
 /*
  *
  */
@@ -73,9 +69,8 @@ workflow {
         repeats(genome_ch)
     if ( params.scaffold_contigs )
         scaffold(contigs_ch, contigs_reads_ch, ref_ch )
-        // scaffold(test_ch, contigs_reads_ch, ref_ch ) // For testing purposes
     if ( params.assess_scaffolds )
         assess_scaffolds()
     if ( params.annotate_scaffold )
-        annotation(assembly_ch)
+        annotation(scaffold_ch)
 }

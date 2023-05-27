@@ -19,7 +19,6 @@ process MAKER {
             opts_rm_gff=${files[5]}
             """
         // genemarks = "opts_gmhmm=$current[1]" // Maybe won't need genemarks in the second round since it hasn't been trained on anything else
-        // opts_augustus_species=${files[2]} // Since
     }
     """
     maker -CTL

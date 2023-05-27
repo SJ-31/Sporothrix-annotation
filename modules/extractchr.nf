@@ -1,5 +1,5 @@
 process EXTRACTCHR  {
-    publishDir "$outdir/aligned/$name"
+    publishDir "$outdir/$name", mode: 'copy'
     debug true
 
     input:
@@ -11,6 +11,7 @@ process EXTRACTCHR  {
     path("*.fasta")
     //
     shell:
+    n_name = scaffolds.baseName.replaceAll(/_.*/, '')
     '''
     rename=!{scaffolds.baseName}
     minimap2 -a !{ref} !{scaffolds} > ${rename}.sam
@@ -23,10 +24,10 @@ process EXTRACTCHR  {
             case $aln in
             '*')
                 samtools view -h ${rename}.bam "${aln}" | \
-                samtools fasta ${rename}_unaligned.bam > ${rename}_unaligned.fasta;;
+                samtools fasta > !{n_name}_unaligned.fasta;;
             *)
                 samtools view -h ${rename}.bam "${aln}" | \
-                samtools fasta ${rename}_${aln}.bam > ${rename}_${aln}.fasta;;
+                samtools fasta > !{n_name}_${aln}.fasta;;
             esac
     done < alignments.txt
     find -type f -empty -delete
