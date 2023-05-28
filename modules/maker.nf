@@ -1,25 +1,41 @@
-process MAKER {
+process MAKER_F {
     input:
     tuple val(sample), path(files)
     val(args)
-    val(first) // Controls whether or not maker is trained on the genome or the gff file from a previous round
+
     output:
     tuple val(sample), path("*.output")
     //
     script:
     train_on = "opts_genome=${files}"
-    if (first) {
-        predictors = "opts_gmhmm=${args[1]}/1-${sample}_gmhmm.mod"
-    }
-    else{
-        predictors = """
-            opts_snaphmm=${files[1]} \
-            opts_est_gff=${files[2]} \
-            opts_protein_gff=${files[3]} \
-            opts_rm_gff=${files[4]}
-            """
+    predictors = "opts_gmhmm=${args[1]}/1-${sample}_gmhmm.mod"
+    """
+    maker -CTL
+    maker_cli.py ${args[0]} \
+    ${train_on} \
+    ${predictors}
+    maker -fix_nucleotides
+    """
+    //
+}
+
+process MAKER_R {
+    input:
+    tuple val(sample), path(files)
+    val(args)
+
+    output:
+    tuple val(sample), path("*.output")
+    //
+    script:
+    train_on = "opts_genome=${files}"
+    predictors = """
+        opts_snaphmm=${files[1]} \
+        opts_est_gff=${files[2]} \
+        opts_protein_gff=${files[3]} \
+        opts_rm_gff=${files[4]}
+        """
         // genemarks = "opts_gmhmm=$current[1]" // Maybe won't need genemarks in the second round since it hasn't been trained on anything else
-    }
     """
     maker -CTL
     maker_cli.py ${args[0]} \
@@ -31,9 +47,9 @@ process MAKER {
 }
 
 process GET_GFF {
-    publishDir "$outdir/$name/R$round/", mode: 'copy', pattern: "*.all.gff"
-    publishDir "$outdir/$name/R$round/", mode: 'copy', pattern: "*.fasta"
-    publishDir "$outdir/$name/R$round/", mode: 'copy', pattern: "*.txt"
+    publishDir "$outdir/${name}/R${round}/", mode: 'copy', pattern: "*.all.gff"
+    publishDir "$outdir/${name}/R${round}/", mode: 'copy', pattern: "*.fasta"
+    publishDir "$outdir/${name}/R${round}/", mode: 'copy', pattern: "*.txt"
     debug true
     input:
     tuple val(name), path(maker_out)
@@ -41,9 +57,12 @@ process GET_GFF {
     val(outdir)
     //
     output:
-    tuple val(name), path("0-*.all.gff"), emit: all
-    tuple val(name), path("*{est2genome,repeats,protein2genome}.gff"), emit: evidence
-    tuple val(name), path("*{.fasta,.txt}"), emit: fastas
+    tuple val(formatted), path("0-*.all.gff"), emit: all
+    tuple val(formatted), path("*{est2genome,repeats,protein2genome}.gff"), emit: evidence
+    tuple val(formatted), path("*{.fasta,.txt}"), emit: fastas
+
+    exec:
+    formatted = maker_out.baseName[2..-1].replaceAll(/.maker/, '')
 
     shell:
     '''
@@ -61,7 +80,7 @@ process GET_GFF {
     ${name}.all.maker.noseq.gff > 4-${name}.all.maker.repeats.gff
     if [ ! -f ./*fasta ];
         then
-            touch ${name}-NOFASTA.txt
+            touch 0-${name}.all.NOFASTA.txt
     fi
     '''
     //
