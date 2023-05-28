@@ -13,29 +13,32 @@ include { AUGUSTUS; AUGUSTUS_MAKER } from "../modules/augustus"
  * Workflow
  */
 
-workflow annotation {
+workflow train_genemarks {
     take:
-    assemblies
+    scaffolds
 
     main:
-    genemark_ch = GENEMARKS_ES(assemblies)
-    assemblies.mix(genemark_ch).groupTuple(sort: true)
-        .set { r1_ch }
-    MAKER_R1(r1_ch, params.makerR1, true)
+    genemark_ch = GENEMARKS_ES(scaffolds, params.genemarks)
+}
+
+workflow annotation {
+    take:
+    chromosomes
+    scaffolds
+
+    main:
+    MAKER_R1(chromosomes, params.makerR1, true)
         .set { makerR1 }
-    round1_out = GET_GFF(makerR1, '1')
+    round1_out = GET_GFF(makerR1, params.outdirAnnotate, '1')
     round1_out.evidence.transpose()
         .set { r1_evidence_ch }
 
     // Train predictors
     snap1_ch = SNAP(round1_out.all, '1', params.outdirAnnotate).hmm
-    assemblies.mix(round1_out.all).groupTuple(sort: true)
-        .set { to_aug1 }
-    aug1_ch = AUGUSTUS(to_aug1, '1') // Will use the S. schenckii reference genome for augustus training, so this step doesn't do anything right now
-    assemblies.mix(r1_evidence_ch).mix(snap1_ch).mix(aug1_ch)
-        .groupTuple(sort: true)
-        .view()
-        .set { r2_ch }
+    // chromosomes.mix(r1_evidence_ch).mix(snap1_ch)
+    //     .groupTuple(sort: true)
+    //     .view()
+    //     .set { r2_ch }
 
     // Second round
     // MAKER_R2(r2_ch, params.makerR2, false)

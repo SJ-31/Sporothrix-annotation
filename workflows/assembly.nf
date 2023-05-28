@@ -7,6 +7,7 @@ include { MULTIQC as MULTIQC_I } from '../modules/multiqc'
 include { MULTIQC as MULTIQC_T } from '../modules/multiqc'
 include { COMBINE as COMBINE_QC } from '../modules/combine'
 include { FASTP } from '../modules/fastp'
+include { BBDUK } from '../modules/bbduk'
 include { COMBINE as COMBINE_P } from '../modules/combine'
 include { SEQKIT_STATS } from '../modules/seqkit'
 include { SPADES; EXTRACT_SPADES } from '../modules/spades'
@@ -23,19 +24,19 @@ workflow assembly {
     raw
 
     main:
-    FASTQC_I(raw, params.outdirInitial) // Initial quality check
-        .zip.collect().set { fastqcInitial_ch }
-    COMBINE_QC(fastqcInitial_ch)
+    // FASTQC_I(raw, params.outdirInitial) // Initial quality check
+    //     .zip.collect().set { fastqcInitial_ch }
+    // COMBINE_QC(fastqcInitial_ch)
     FASTP(raw, params.outdirTrim) // Check
         .set { fastp }
     BBDUK(fastp.fastq, params.mtDNA,
-            params.bbduk_args, params.bbdukOut)
+            params.bbduk_args, params.bbdukOut).set { bbduk_ch }
     // FASTQC_T(fastp.fastq, params.outdirTrim) // Verify results of trimming
     //     .zip.collect().set { fastqcTrim_ch }
     // spades_ch = SPADES(fastp.fastq)
     // EXTRACT_SPADES(spades_ch, params.spadesOut)
     //     .set{ spadesA_ch }
-    megahit_ch = MEGAHIT(fastp.fastq)
+    megahit_ch = MEGAHIT(bbduk_ch.reads)
     EXTRACT_MH(megahit_ch, params.megaOut)
     // Quality assessment
 }

@@ -1,5 +1,5 @@
 process SNAP {
-    publishDir "$outdir/$name/$round/", mode: 'copy', pattern: "*.log"
+    publishDir "$outdir/snap_logs/${name}_R${round}/", mode: 'copy', pattern: "*.log"
 
     input:
     tuple val(name), path(gff)

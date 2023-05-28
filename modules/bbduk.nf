@@ -1,7 +1,7 @@
 process BBDUK {
-    tag "Cleaning with $reference"
     memory { 2.GB * task.attempt }
-    publishDir "$outdir/", pattern: "{*.txt, *-flagged*}", mode: 'copy'
+    publishDir "$outdir/", pattern: "*.txt", mode: 'copy'
+    publishDir "$outdir/", pattern: "*-flagged*"
 
     input:
     tuple val(name), path(reads) // You NEED the comma
@@ -10,9 +10,9 @@ process BBDUK {
     val(outdir)
     //
     output:
-    tuple(val(reference.baseName), path("B-*.fastq.gz"), emit: reads)
-    path("*-flagged*")
-    path("*.txt")
+    tuple(val(name), path("B-*.fastq.gz"), emit: reads)
+    path("*-flagged*"), emit: flagged
+    path("*.txt"), emit: log
 
     exec:
     def forw = reads[0].baseName.replaceAll(/T-/, 'B-')

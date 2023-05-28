@@ -1,9 +1,13 @@
 process GENEMARKS_ES {
+    publishDir "$outdir", pattern: "1-${name}_gmhmm.mod", mode: 'copy'
+
     input:
     tuple val(name), path(file)
+    val(outdir)
     //
     output:
-    tuple val(name), path("1-${name}_gmhmm.mod")
+    path("1-${name}_gmhmm.mod")
+
     //
     script:
     """

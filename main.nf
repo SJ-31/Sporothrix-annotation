@@ -3,7 +3,7 @@
  */
 
 include { assembly; assess } from './workflows/assembly'
-include { annotation } from './workflows/annotation'
+include { train_genemarks; annotation } from './workflows/annotation'
 include { repeats } from './workflows/repeatlibrary'
 include { rnaseq } from './workflows/rnaseq'
 include { scaffold; assess_scaffolds } from './workflows/finishing'
@@ -11,7 +11,7 @@ include { scaffold; assess_scaffolds } from './workflows/finishing'
 /*
  * Raw files for assembly, if you don't split up the dataset, will run out of memory
  */
-params.raw = "$projectDir/data/$params.to_assemble/*"
+params.raw = "$projectDir/data/$params.to_assemble/"
 params.rna = "$projectDir/data/raw_rna"
 params.results = "$projectDir/results"
 
@@ -30,12 +30,10 @@ Channel.fromPath("$projectDir/data/reference/genomes/for_repeats/*")
  * Finishing channels
  */
 
-Channel.fromPath("$projectDir/results/assembly/annotate/*")
-    .map { it -> [ (it =~ /.*-(.*)_.*/)[0][1], it ]}
+Channel.fromPath("$projectDir/results/assembly/$params.to_scaffold/*")
+    .map { it -> [ it.baseName.replaceAll(/_.*/, '').replaceAll(/.*-/, '')
+                , it ]}
     .set { contigs_ch }
-Channel.fromPath("$projectDir/results/assembly/annotate-current/*")
-    .map { it -> [ (it =~ /.*-(.*)_.*/)[0][1], it ]}
-    .set { test_ch } // The testing channel
 contigs_ch.combine(raw_ch, by: 0)
     .set { contigs_reads_ch }
 Channel.fromPath("$projectDir/data/reference/genomes/scaffold_ref/*")
@@ -49,11 +47,17 @@ Channel.fromPath(params.genomes)
  * Annotation channels
  */
 annotation = "$params.results/assembly/7-aligned/$params.current/*"
-
+Channel.fromPath("$params.results/assembly/5-scaffolds/ragout/*.fasta")
+    .map { it -> [ it.baseName[2..-1].replaceAll(/_.*/, ''), it ] }
+    .set { all_scaffs }
 Channel.fromPath(
     "$annotation")
-    .map {it -> [ it.baseName[2..-1], it ]}
-    .set { assembly_ch } // Add a prefix for sorting purposes
+    .map {it -> [ it.baseName[2..-1].replaceAll(/_.*/, ''), it ]}
+    .set { chromosome_ch  } // A prefix was added for sorting purposes
+Channel.fromPath(
+    "$params.results/assembly/5-scaffolds/ragout/0-${params.current}_scaffolds.fasta")
+    .map { it -> [ it.baseName[2..-1].replaceAll(/_.*/, ''), it ] }
+    .set { scaffold_ch }
 
 /*
  *
@@ -71,6 +75,7 @@ workflow {
         scaffold(contigs_ch, contigs_reads_ch, ref_ch )
     if ( params.assess_scaffolds )
         assess_scaffolds()
+    // train_genemarks(all_scaffs)
     if ( params.annotate_scaffold )
-        annotation(scaffold_ch)
+        annotation(chromosome_ch, scaffold_ch)
 }
