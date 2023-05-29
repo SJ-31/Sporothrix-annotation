@@ -19,35 +19,39 @@ process MAKER_F {
     //
 }
 
+// todo: Fix this up!!!
 process MAKER_R {
+    tag "Annotating $chromosome,$fasta,$est2genome,$protein2genome,$repeats,$snap"
+
     input:
-    tuple val(sample), path(files)
+    tuple val(chromosome)
+    path(fasta)
+    path(est2genome)
+    path(protein2genome)
+    path(snap)
+    path(repeats)
     val(args)
 
     output:
     tuple val(sample), path("*.output")
     //
     script:
-    train_on = "opts_genome=${files}"
-    predictors = """
-        opts_snaphmm=${files[1]} \
-        opts_est_gff=${files[2]} \
-        opts_protein_gff=${files[3]} \
-        opts_rm_gff=${files[4]}
-        """
-        // genemarks = "opts_gmhmm=$current[1]" // Maybe won't need genemarks in the second round since it hasn't been trained on anything else
+    sample = chromosome.replaceAll(/_.*/, '')
     """
     maker -CTL
-    maker_cli.py ${args[0]} \
-    ${train_on} \
-    ${predictors}
+    maker_cli.py ${args} \
+    opts_genome=$fasta \
+    opts_snaphmm=$snap \
+    opts_est_gff=$est2genome \
+    opts_protein_gff=$protein2genome \
+    opts_rm_gff=$repeats
     maker -fix_nucleotides
     """
     //
 }
 
 process GET_GFF {
-    publishDir "$outdir/${name}/R${round}/", mode: 'copy', pattern: "*.all.gff"
+    publishDir "$outdir/${name}/R${round}/", mode: 'copy', pattern: "*.gff"
     publishDir "$outdir/${name}/R${round}/", mode: 'copy', pattern: "*.fasta"
     publishDir "$outdir/${name}/R${round}/", mode: 'copy', pattern: "*.txt"
     debug true
@@ -63,7 +67,7 @@ process GET_GFF {
 
     exec:
     formatted = maker_out.baseName[2..-1].replaceAll(/.maker/, '')
-
+    //todo: Something is wrong with the way you are extracting the protein and genome stuff
     shell:
     '''
     name=$(echo *output* | sed -e 's/0-//' -e 's/.maker.output//' )

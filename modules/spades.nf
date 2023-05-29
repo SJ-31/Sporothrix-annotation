@@ -1,7 +1,7 @@
 process SPADES {
     input:
     tuple val(run), path(reads)
-    //
+    path(args)
     output:
     tuple val("spades"), val(run), path(run)
     //
@@ -9,7 +9,8 @@ process SPADES {
     """
     spades.py \
     -o $run \
-    --pe-1 1 ${reads[0]} --pe-2 1 ${reads[1]} \
+    $args \
+    --pe-1 1 ${reads[0]} --pe-2 1 ${reads[1]}
     """
     //
 }

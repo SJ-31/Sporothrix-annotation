@@ -39,12 +39,18 @@ workflow annotation {
     snap1_ch = SNAP(round1_out.all, '1', params.outdirAnnotate).hmm
     chromosomes.flatten().filter( ~/.*fasta/ )
         .map { it -> [ it.baseName[2..-1], it ]}
-        .mix(r1_evidence_ch).mix(snap1_ch)
-        .groupTuple(sort: true)
-        .set { r2_ch }
-
+        .mix(r1_evidence_ch).mix(snap1_ch).groupTuple()
+        .flatten().branch {
+            name: !(it =~ /\./)
+            chr: it =~ /fasta/
+            est: it =~ /est2genome/
+            protein: it =~ /protein2genome/
+            snap: it =~ /snap/
+            repeats: it =~ /repeat/
+        }.set { r2_ch } // Looks like you figured out how to filter them easily...
     // Second round
-    MAKER_R2(r2_ch, params.makerR2)
+    MAKER_R2(r2_ch.name, r2_ch.chr, r2_ch.est, r2_ch.protein, r2_ch.snap, r2_ch.repeats,
+        params.makerR2)
         .set { makerR2 }
     round2_out = GET_GFF2(makerR2, '2', params.outdirAnnotate)
 

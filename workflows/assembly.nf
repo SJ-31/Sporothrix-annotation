@@ -33,11 +33,11 @@ workflow assembly {
             params.bbduk_args, params.bbdukOut).set { bbduk_ch }
     // FASTQC_T(fastp.fastq, params.outdirTrim) // Verify results of trimming
     //     .zip.collect().set { fastqcTrim_ch }
-    // spades_ch = SPADES(fastp.fastq)
-    // EXTRACT_SPADES(spades_ch, params.spadesOut)
-    //     .set{ spadesA_ch }
-    megahit_ch = MEGAHIT(bbduk_ch.reads)
-    EXTRACT_MH(megahit_ch, params.megaOut)
+    spades_ch = SPADES(fastp.fastq)
+    EXTRACT_SPADES(spades_ch, params.spadesOut)
+        .set{ spadesA_ch }
+    // megahit_ch = MEGAHIT(bbduk_ch.reads)
+    // EXTRACT_MH(megahit_ch, params.megaOut)
     // Quality assessment
 }
 
