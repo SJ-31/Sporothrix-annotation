@@ -1,7 +1,7 @@
 process SPADES {
     input:
     tuple val(run), path(reads)
-    path(args)
+    val(args)
     output:
     tuple val("spades"), val(run), path(run)
     //

@@ -7,7 +7,7 @@ process SNAP {
     val(outdir)
     //
     output:
-    tuple val(name), path("1-*snap_hmm"), emit: hmm
+    tuple val(name), path("*snap_hmm"), emit: hmm
     path("*.log")
     //
     script:
@@ -20,7 +20,7 @@ process SNAP {
     fathom genome.ann genome.dna -categorize 100 > ${name}_SNAP-categorize.log 2>&1
     fathom -export 100 -plus uni.*
     forge export.ann export.dna
-    hmm-assembler.pl ${gff.baseName[2..-1]} . > 1-${gff.baseName[2..-1]}.snap_hmm
+    hmm-assembler.pl ${gff.baseName[2..-1]} . > ${gff.baseName[2..-1]}.snap_hmm
     """
     //
 }

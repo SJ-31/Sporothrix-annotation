@@ -48,15 +48,15 @@ Channel.fromPath(params.genomes)
  */
 annotation = "$params.results/assembly/7-aligned/$params.current/*"
 Channel.fromPath("$params.results/assembly/5-scaffolds/ragout/*.fasta")
-    .map { it -> [ it.baseName[2..-1].replaceAll(/_.*/, ''), it ] }
+    .map { it -> [ it.baseName.replaceAll(/_.*/, ''), it ] }
     .set { all_scaffs }
 Channel.fromPath(
     "$annotation")
-    .map {it -> [ it.baseName[2..-1].replaceAll(/_.*/, ''), it ]}
-    .set { chromosome_ch  } // A prefix was added for sorting purposes
+    .map {it -> [ it.baseName.replaceAll(/_.*/, ''), it ]}
+    .set { chromosome_ch  }
 Channel.fromPath(
-    "$params.results/assembly/5-scaffolds/ragout/0-${params.current}_scaffolds.fasta")
-    .map { it -> [ it.baseName[2..-1].replaceAll(/_.*/, ''), it ] }
+    "$params.results/assembly/5-scaffolds/ragout/${params.current}_scaffolds.fasta")
+    .map { it -> [ it.baseName.replaceAll(/_.*/, ''), it ] }
     .set { scaffold_ch }
 
 /*

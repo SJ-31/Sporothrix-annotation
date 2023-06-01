@@ -29,29 +29,36 @@ workflow annotation {
     scaffolds
 
     main:
-    MAKER_F(chromosomes, params.makerR1)
+    if ( params.annotate_what == 'scaffolds')
+        scaffolds.set { annotating }
+    else if ( params.annotate_what == 'chromosome' )
+        chromosomes.set { annotating }
+    MAKER_F(annotating, params.makerR1, params.outdirAnnotate)
         .set { makerR1 }
-    round1_out = GET_GFF(makerR1, '1', params.outdirAnnotate)
-    round1_out.evidence.transpose()
-        .set { r1_evidence_ch }
-
+    // round1_out = GET_GFF(makerR1, '1', params.outdirAnnotate)
+    // round1_out.evidence.transpose()
+    //     .set { r1_evidence_ch }
     // Train predictors
-    snap1_ch = SNAP(round1_out.all, '1', params.outdirAnnotate).hmm
-    chromosomes.flatten().filter( ~/.*fasta/ )
-        .map { it -> [ it.baseName[2..-1], it ]}
-        .mix(r1_evidence_ch).mix(snap1_ch).groupTuple()
-        .flatten().branch {
-            name: !(it =~ /\./)
-            chr: it =~ /fasta/
-            est: it =~ /est2genome/
-            protein: it =~ /protein2genome/
-            snap: it =~ /snap/
-            repeats: it =~ /repeat/
-        }.set { r2_ch } // Looks like you figured out how to filter them easily...
+    SNAP(makerR1.all, '1', params.outdirAnnotate)
+        .set { snap1_ch }
+
+    // Sort output
+    // annotating.flatten().filter( ~/.*fasta/ )
+    //     .map { it -> [ it.baseName[2..-1], it ]}
+    //     .mix(r1_evidence_ch).mix(snap1_ch).groupTuple()
+    //     .flatten().branch {
+    //         name: !(it =~ /\./)
+    //         chr: it =~ /fasta/
+    //         est: it =~ /est2genome/
+    //         protein: it =~ /protein2genome/
+    //         snap: it =~ /snap/
+    //         repeats: it =~ /repeat/
+    //     }.set { r2_ch } // Looks like you figured out how to filter them easily...
+
     // Second round
-    MAKER_R2(r2_ch.name, r2_ch.chr, r2_ch.est, r2_ch.protein, r2_ch.snap, r2_ch.repeats,
-        params.makerR2)
-        .set { makerR2 }
-    round2_out = GET_GFF2(makerR2, '2', params.outdirAnnotate)
+    // MAKER_R2(r2_ch.name, r2_ch.chr, r2_ch.est, r2_ch.protein, r2_ch.snap, r2_ch.repeats,
+    //     params.makerR2)
+    //     .set { makerR2 }
+    // round2_out = GET_GFF2(makerR2, '2', params.outdirAnnotate)
 
 }
