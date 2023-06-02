@@ -70,10 +70,12 @@ workflow annotation {
     // Collect results
     GET_FASTA(maker_final.makerout, params.outdirAnnotate)
         .set { fastas }
-    fastas.protein.map {it -> [ it[0].replaceAll(/_.*/, ''), it[1] ] }
+    fastas.protein.map {it -> [ it[0].replaceAll(/_.*/, ''), it[1] ] }.transpose()
         .groupTuple().map { it -> [ it[0], 'protein', it[1] ]}.set { all_prot }
-    all_prot.view()
-    // GET_FASTA.transcripts.map {it -> [ it[0].replaceAll(/_.*/, ''), it[1] ] }
-    //     .groupTuple().set { all_transcripts }
-    // MERGE_FASTA(all_prot.join(all_transcripts))
+    fastas.transcripts.map {it -> [ it[0].replaceAll(/_.*/, ''), it[1] ] }.transpose()
+        .groupTuple().map { it -> [ it[0], 'transcripts', it[1] ]}.set { all_transcripts }
+    MERGE_FASTA(all_prot.mix(all_transcripts), params.outdirAnnotate)
+
+    // Verify transcripts
 }
+

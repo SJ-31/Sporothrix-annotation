@@ -103,19 +103,19 @@ process GET_FASTA {
 }
 
 process MERGE_FASTA {
-    publishDir "$outdir/${sample}/", mode: 'copy', pattern: "*.fasta"
+    publishDir "$outdir/${sample}/", mode: 'copy', pattern: "*merged.fasta"
 
     input:
-    tuple val(sample), path(files)
+    tuple val(sample), val(type), path(files)
     val(outdir)
     //
     output:
-    path("${sample}_merged.fasta")
+    path("${sample}-${type}_merged.fasta")
 
     script:
-    sample = name.replaceAll(/_.*/, '')
     """
-    cat $files > ${sample}_merged.fasta
+    cat $files > duplicates.fasta
+    seqkit rmdup duplicates.fasta > ${sample}-${type}_merged.fasta
     """
     //
 }
