@@ -38,42 +38,43 @@ process EXTRACT_BUSCO {
     //
 }
 
-process MULTIQC_B {
-    publishDir "$outdir/$round", pattern: "*html", mode: 'copy'
-
-    input:
-    path(files)
-    val(outdir)
-    //
-    output:
-    path("*.html")
-    //
-    script:
-    def assembler = (files[0] =~ /\d_(.*).txt/)[0][1]
-    """
-    mkdir $assembler
-    ls --ignore=$assembler | xargs -I{} mv {} $assembler/
-    multiqc $assembler
-    mv *.html ${assembler}.html
-    """
-    //
-}
-
-
-process BUSCO_MAKER {
-    publishDir "$outdir/${assembler}", mode: 'copy'
+process MAKER_BUSCO {
+    publishDir "$outdir/${sample}", mode: 'copy'
     conda '/home/sc31/Bio_SDD/miniconda3/envs/busco'
 
     input:
-    tuple val(assembler), path(assembly)
+    tuple val(sample), path(assembly)
     val(mode)
     val(outdir)
     //
     output:
-    path("*_$assembler")
+    path("*_BUSCO")
+    //
+    script:
+    """
+    busco -i $assembly \
+    -l sordariomycetes_odb10 \
+    -o ${assembly}_BUSCO \
+    -m $mode \
+    --offline \
+    --download_path $projectDir/busco_downloads
+    """
+}
+
+process BUSCO_F {
+    publishDir "$outdir"
+    conda '/home/sc31/Bio_SDD/miniconda3/envs/busco'
+
+    input:
+    tuple val(name), path(assembly)
+    val(mode)
+    val(outdir)
+    //
+    output:
+    path("${assembly.baseName.replaceAll(/_.*/, '')}")
     //
     exec:
-    def run = assembly.baseName.replaceAll(/_.*/, '') + "_$assembler"
+    def run = assembly.baseName.replaceAll(/_.*/, '')
 
     script:
     """
@@ -84,4 +85,21 @@ process BUSCO_MAKER {
     --offline \
     --download_path $projectDir/busco_downloads
     """
+}
+
+process EXTRACT_BUSCO_F {
+    publishDir "$outdir", mode: 'copy'
+
+    input:
+    path("*")
+    val(outdir)
+    //
+    output:
+    path("short_summary.*.txt")
+    //
+    shell:
+    '''
+    cp */short_summary.*.txt .
+    '''
+    //
 }

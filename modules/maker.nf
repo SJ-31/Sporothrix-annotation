@@ -65,7 +65,7 @@ process MAKER_R {
     //
 }
 
-process COMBINE {
+process MAKER_COMBINE {
     publishDir "$outdir/${sample}/", mode: 'copy', pattern: "*final.gff"
 
     input:
@@ -82,7 +82,7 @@ process COMBINE {
     //
 }
 
-process GET_FASTA {
+process MAKER_GET_FASTA {
     publishDir "$outdir/${sample}/protein_fastas/", mode: 'copy', pattern: "*protein*"
     publishDir "$outdir/${sample}/transcript_fastas/", mode: 'copy', pattern: "*transcripts*"
 
@@ -102,7 +102,7 @@ process GET_FASTA {
     //
 }
 
-process MERGE_FASTA {
+process MAKER_MERGE_FASTA {
     publishDir "$outdir/${sample}/", mode: 'copy', pattern: "*merged.fasta"
 
     input:
@@ -110,7 +110,7 @@ process MERGE_FASTA {
     val(outdir)
     //
     output:
-    path("${sample}-${type}_merged.fasta")
+    tuple val(sample), path("${sample}-${type}_merged.fasta")
 
     script:
     """

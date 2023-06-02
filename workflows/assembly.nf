@@ -12,7 +12,7 @@ include { COMBINE as COMBINE_P } from '../modules/combine'
 include { SEQKIT_STATS } from '../modules/seqkit'
 include { SPADES; EXTRACT_SPADES } from '../modules/spades'
 include { MEGAHIT; EXTRACT_MH } from '../modules/megahit'
-include { BUSCO; EXTRACT_BUSCO; MULTIQC_B } from '../modules/busco'
+include { BUSCO; EXTRACT_BUSCO } from '../modules/busco'
 include { QUAST } from '../modules/quast'
 
 /*

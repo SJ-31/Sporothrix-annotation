@@ -1,13 +1,15 @@
 /*
  * Module imports
  */
-include { MAKER_F; GET_FASTA; MERGE_FASTA; COMBINE } from "../modules/maker"
+include { MAKER_F; MAKER_GET_FASTA; MAKER_MERGE_FASTA;
+    MAKER_COMBINE } from "../modules/maker"
 include { MAKER_R as MAKER_R2 } from "../modules/maker"
 include { MAKER_R as MAKER_R3 } from "../modules/maker"
 include { SNAP } from "../modules/snap"
 include { SNAP as SNAP2 } from "../modules/snap"
 include { GENEMARKS_ES } from "../modules/genemarksES"
 include { AUGUSTUS; AUGUSTUS_MAKER } from "../modules/augustus"
+include { MAKER_BUSCO } from "../modules/busco"
 
 /*
  * Workflow
@@ -64,18 +66,20 @@ workflow annotation {
     // Third round
     MAKER_R3(r3_ch.name, r3_ch.gff, r3_ch.fasta, r3_ch.snap, '3',
     params.makerR3, params.outdirAnnotate).set { maker_final }
-    COMBINE(maker_final.gff.map { it -> [ it[0].replaceAll(/_.*/,''), it[1] ]}
-        .groupTuple(), params.outdirAnnotate)
+    MAKER_COMBINE(maker_final.gff.map { it -> [ it[0].replaceAll(/_.*/,''),
+        it[1] ]}.groupTuple(), params.outdirAnnotate)
 
     // Collect results
-    GET_FASTA(maker_final.makerout, params.outdirAnnotate)
+    MAKER_GET_FASTA(maker_final.makerout, params.outdirAnnotate)
         .set { fastas }
     fastas.protein.map {it -> [ it[0].replaceAll(/_.*/, ''), it[1] ] }.transpose()
         .groupTuple().map { it -> [ it[0], 'protein', it[1] ]}.set { all_prot }
     fastas.transcripts.map {it -> [ it[0].replaceAll(/_.*/, ''), it[1] ] }.transpose()
         .groupTuple().map { it -> [ it[0], 'transcripts', it[1] ]}.set { all_transcripts }
-    MERGE_FASTA(all_prot.mix(all_transcripts), params.outdirAnnotate)
+    MAKER_MERGE_FASTA(all_prot.mix(all_transcripts), params.outdirAnnotate)
+        .set { merged }
 
     // Verify transcripts
+    MAKER_BUSCO(merged.filter { it[1] =~/transcripts/ }, 'transcriptome', params.outdirAnnotate)
 }
 
