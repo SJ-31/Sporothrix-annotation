@@ -1,10 +1,7 @@
 /*
  * Module imports
  */
-include { GET_GFF } from "../modules/maker"
-include { GET_GFF as GET_GFF2 } from "../modules/maker"
-include { GET_GFF as GET_GFF3 } from "../modules/maker"
-include { MAKER_F } from "../modules/maker"
+include { MAKER_F; GET_FASTA; MERGE_FASTA; COMBINE } from "../modules/maker"
 include { MAKER_R as MAKER_R2 } from "../modules/maker"
 include { MAKER_R as MAKER_R3 } from "../modules/maker"
 include { SNAP } from "../modules/snap"
@@ -58,6 +55,7 @@ workflow annotation {
     // Second round
     MAKER_R2(r2_ch.name, r2_ch.gff, r2_ch.fasta, r2_ch.snap, '2',
     params.makerR2, params.outdirAnnotate).set { makerR2 }
+    //  Second SNAP training
     SNAP2(makerR2.gff, '2', params.outdirAnnotate)
         .set { snap2_ch }
     snap2_ch.hmm.join(makerR2.gff).join(annotating).flatten().branch(makerNext)
@@ -65,7 +63,17 @@ workflow annotation {
 
     // Third round
     MAKER_R3(r3_ch.name, r3_ch.gff, r3_ch.fasta, r3_ch.snap, '3',
-    params.outdirAnnotate)
+    params.makerR3, params.outdirAnnotate).set { maker_final }
+    COMBINE(maker_final.gff.map { it -> [ it[0].replaceAll(/_.*/,''), it[1] ]}
+        .groupTuple(), params.outdirAnnotate)
 
-
+    // Collect results
+    GET_FASTA(maker_final.makerout, params.outdirAnnotate)
+        .set { fastas }
+    fastas.protein.map {it -> [ it[0].replaceAll(/_.*/, ''), it[1] ] }
+        .groupTuple().map { it -> [ it[0], 'protein', it[1] ]}.set { all_prot }
+    all_prot.view()
+    // GET_FASTA.transcripts.map {it -> [ it[0].replaceAll(/_.*/, ''), it[1] ] }
+    //     .groupTuple().set { all_transcripts }
+    // MERGE_FASTA(all_prot.join(all_transcripts))
 }

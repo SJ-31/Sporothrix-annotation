@@ -30,7 +30,7 @@ process MAKER_F {
 }
 
 process MAKER_R {
-    publishDir "$outdir/makerAllOutput/R${round}/$sample", mode: 'copy', pattern: "*all.output"
+    publishDir "$outdir/makerAllOutput/R${round}/$sample", mode: 'copy', pattern: "*maker.output"
     publishDir "$outdir/makerAllOutput/R${round}/$sample", mode: 'copy', pattern: "${name}.log"
     publishDir "$outdir/${sample}/R${round}/", mode: 'copy', pattern: "*.gff"
     tag "Round $round: Annotating $sample, gff = $all_gff, snap = $snap, sequence = $fasta"
@@ -65,46 +65,57 @@ process MAKER_R {
     //
 }
 
-// Not needed
-process GET_GFF {
-    tag "Extracting $name, round $round"
+process COMBINE {
+    publishDir "$outdir/${sample}/", mode: 'copy', pattern: "*final.gff"
 
-    publishDir "$outdir/${name}/R${round}/", mode: 'copy', pattern: "*.gff"
-    publishDir "$outdir/${name}/R${round}/", mode: 'copy', pattern: "*.fasta"
-    publishDir "$outdir/${name}/R${round}/", mode: 'copy', pattern: "*.txt"
-    debug true
     input:
-    tuple val(name), path(maker_out)
-    val(round)
+    tuple val(sample), path(gffs)
     val(outdir)
     //
     output:
-    tuple val(formatted), path("*.all.gff"), emit: all
-    path("*repeats.gff"), emit: repeats
-    path("*protein2genome.gff"), emit: protein
-    path("*est2genome.gff"), emit: ests
-    tuple val(formatted), path("*{.fasta,.txt}"), emit: fastas
+    path("${sample}_final.gff")
+    //
+    script:
+    """
+    cat $gffs > ${sample}_final.gff
+    """
+    //
+}
 
-    exec:
-    formatted = maker_out.baseName[2..-1].replaceAll(/.maker/, '')
-    shell:
-    '''
-    name=$(echo *output* | sed -e 's/.maker.output//' )
-    cp -r *output/* .
-    gff3_merge -d ${name}_master_datastore_index.log
-    fasta_merge -d ${name}_master_datastore_index.log
-    gff3_merge -n -s -d ${name}_master_datastore_index.log \
-    > ${name}.all.maker.noseq.gff
-    awk '{ if ($2 == "est2genome") print $0 }' \
-    ${name}.all.maker.noseq.gff > ${name}.all.maker.est2genome.gff
-    awk '{ if ($2 == "protein2genome") print $0 }' \
-    ${name}.all.maker.noseq.gff > ${name}.all.maker.protein2genome.gff
-    awk '{ if ($2 ~ "repeat") print $0 }' \
-    ${name}.all.maker.noseq.gff > ${name}.all.maker.repeats.gff
-    if [ ! -f ./*fasta ];
-        then
-            touch ${name}.all.NOFASTA.txt
-    fi
-    '''
+process GET_FASTA {
+    publishDir "$outdir/${sample}/protein_fastas/", mode: 'copy', pattern: "*protein*"
+    publishDir "$outdir/${sample}/transcript_fastas/", mode: 'copy', pattern: "*transcripts*"
+
+    input:
+    tuple val(name), path(maker_out)
+    val(outdir)
+    //
+    output:
+    tuple val(name), path("*protein*"), emit: protein
+    tuple val(name), path("*transcripts*"), emit: transcripts
+
+    script:
+    sample = name.replaceAll(/_.*/, '')
+    """
+    fasta_merge -d *output*/*datastore*.log
+    """
+    //
+}
+
+process MERGE_FASTA {
+    publishDir "$outdir/${sample}/", mode: 'copy', pattern: "*.fasta"
+
+    input:
+    tuple val(sample), path(files)
+    val(outdir)
+    //
+    output:
+    path("${sample}_merged.fasta")
+
+    script:
+    sample = name.replaceAll(/_.*/, '')
+    """
+    cat $files > ${sample}_merged.fasta
+    """
     //
 }
