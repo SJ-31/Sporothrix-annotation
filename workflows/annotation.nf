@@ -8,6 +8,7 @@ include { MAKER_F } from "../modules/maker"
 include { MAKER_R as MAKER_R2 } from "../modules/maker"
 include { MAKER_R as MAKER_R3 } from "../modules/maker"
 include { SNAP } from "../modules/snap"
+include { SNAP as SNAP2 } from "../modules/snap"
 include { GENEMARKS_ES } from "../modules/genemarksES"
 include { AUGUSTUS; AUGUSTUS_MAKER } from "../modules/augustus"
 
@@ -15,12 +16,20 @@ include { AUGUSTUS; AUGUSTUS_MAKER } from "../modules/augustus"
  * Workflow
  */
 
+
 workflow train_genemarks {
     take:
     scaffolds
 
     main:
     genemark_ch = GENEMARKS_ES(scaffolds, params.genemarks)
+}
+
+def makerNext = branchCriteria {
+            name: !(it =~ /\./)
+            fasta: it =~ /fasta/
+            gff: it =~ /gff/
+            snap: it =~ /hmm/
 }
 
 workflow annotation {
@@ -35,30 +44,28 @@ workflow annotation {
         chromosomes.set { annotating }
     MAKER_F(annotating, params.makerR1, params.outdirAnnotate)
         .set { makerR1 }
-    // round1_out = GET_GFF(makerR1, '1', params.outdirAnnotate)
-    // round1_out.evidence.transpose()
-    //     .set { r1_evidence_ch }
-    // Train predictors
-    SNAP(makerR1.all, '1', params.outdirAnnotate)
-        .set { snap1_ch }
 
-    // Sort output
-    // annotating.flatten().filter( ~/.*fasta/ )
-    //     .map { it -> [ it.baseName[2..-1], it ]}
-    //     .mix(r1_evidence_ch).mix(snap1_ch).groupTuple()
-    //     .flatten().branch {
-    //         name: !(it =~ /\./)
-    //         chr: it =~ /fasta/
-    //         est: it =~ /est2genome/
-    //         protein: it =~ /protein2genome/
-    //         snap: it =~ /snap/
-    //         repeats: it =~ /repeat/
-    //     }.set { r2_ch } // Looks like you figured out how to filter them easily...
+    // Train snap
+    SNAP(makerR1.gff, '1', params.outdirAnnotate)
+        .set { snap1_ch }
+    snap1_ch.hmm.join(makerR1.gff).join(annotating).flatten().branch{
+            name: !(it =~ /\./)
+            fasta: it =~ /fasta/
+            gff: it =~ /gff/
+            snap: it =~ /hmm/
+    }.set { r2_ch }
 
     // Second round
-    // MAKER_R2(r2_ch.name, r2_ch.chr, r2_ch.est, r2_ch.protein, r2_ch.snap, r2_ch.repeats,
-    //     params.makerR2)
-    //     .set { makerR2 }
-    // round2_out = GET_GFF2(makerR2, '2', params.outdirAnnotate)
+    MAKER_R2(r2_ch.name, r2_ch.gff, r2_ch.fasta, r2_ch.snap, '2',
+    params.makerR2, params.outdirAnnotate).set { makerR2 }
+    SNAP2(makerR2.gff, '2', params.outdirAnnotate)
+        .set { snap2_ch }
+    snap2_ch.hmm.join(makerR2.gff).join(annotating).flatten().branch(makerNext)
+        .set { r3_ch }
+
+    // Third round
+    MAKER_R3(r3_ch.name, r3_ch.gff, r3_ch.fasta, r3_ch.snap, '3',
+    params.outdirAnnotate)
+
 
 }

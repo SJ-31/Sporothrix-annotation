@@ -1,5 +1,6 @@
 process SNAP {
     publishDir "$outdir/snap_logs/${sample}_R${round}/", mode: 'copy', pattern: "*.log"
+    publishDir "$outdir/snap_models/${sample}_R${round}/", mode: 'copy', pattern: "*.snap_hmm"
 
     input:
     tuple val(name), path(gff)
@@ -20,11 +21,7 @@ process SNAP {
     fathom genome.ann genome.dna -categorize 100 > ${name}_SNAP-categorize.log 2>&1
     fathom -export 100 -plus uni.*
     forge export.ann export.dna
-    hmm-assembler.pl ${gff.baseName[2..-1]} . > ${gff.baseName[2..-1]}.snap_hmm
+    hmm-assembler.pl ${gff.baseName} . > ${gff.baseName}.snap_hmm
     """
     //
 }
-
-// Alternatively, you could export only 'confident' gene models using the -x <AED threshold> and -l <length threshold> flags in maker2zff
-
-

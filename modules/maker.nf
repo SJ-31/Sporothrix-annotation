@@ -1,90 +1,71 @@
 process MAKER_F {
     publishDir "$outdir/makerAllOutput/R1/$sample", pattern: "*.output", mode: 'copy'
+    publishDir "$outdir/makerAllOutput/R1/$sample", pattern: "${name}.log", mode: 'copy'
     publishDir "$outdir/${sample}/R1/", mode: 'copy', pattern: "*.gff"
     tag "Annotating $sample, file: $files"
 
     input:
-    tuple val(sample), path(files)
+    tuple val(name), path(files)
     val(args)
     val(outdir)
 
     output:
-    tuple val(sample), path("*.output"), emit: makerout
-    tuple val(sample), path("*.all.gff"), emit: all
+    tuple val(name), path("*.output"), emit: makerout
+    tuple val(name), path("*.all.gff"), emit: gff
+    path("${name}.log")
     //
     script:
     train_on = "opts_genome=${files}"
+    sample = name.replaceAll(/_.*/, '')
     predictors = "opts_gmhmm=${args[1]}/${sample}_gmhmm.mod"
     """
     maker -CTL
     maker_cli.py ${args[0]} \
     ${train_on} \
     ${predictors}
-    maker -fix_nucleotides \
-    gff3_merge -d ${sample}_master_datastore_index.log
+    maker -fix_nucleotides 1> ${name}.log
+    gff3_merge -d *output*/*datastore*.log
     """
     //
 }
 
 process MAKER_R {
-    publishDir "$outdir/$round/$name", mode: 'copy', pattern: "*all.output"
-    publishDir "$outdir/${name}/R${round}/", mode: 'copy', pattern: "*.gff"
-    tag "Round $round: Annotating $name in $prevout"
+    publishDir "$outdir/makerAllOutput/R${round}/$sample", mode: 'copy', pattern: "*all.output"
+    publishDir "$outdir/makerAllOutput/R${round}/$sample", mode: 'copy', pattern: "${name}.log"
+    publishDir "$outdir/${sample}/R${round}/", mode: 'copy', pattern: "*.gff"
+    tag "Round $round: Annotating $sample, gff = $all_gff, snap = $snap, sequence = $fasta"
 
     input:
-    tuple val(name), path(prevout)
-    val(snap)
+    val(name)
+    path(all_gff)
+    path(fasta)
+    path(snap)
     val(round)
     val(args)
     val(outdir)
 
     output:
     tuple val(name), path("*.output"), emit: makerout
-    tuple val(name), path("*all.gff"), emit: gff
+    path("${name}.log")
+    tuple val(name), path(all_gff), emit: gff
     //
     script:
+    sample = name.replaceAll(/_.*/, '')
+    prev = all_gff.baseName.replaceAll(/all.gff/, 'prev.gff')
     """
     maker -CTL
     maker_cli.py ${args} \
-    maker -fix_nucleotides \
-    -base ${name}_R${round}
-    gff3_merge_d ${name}_master_datastore_index.log
+    opts_genome=${fasta} \
+    opts_maker_gff=${all_gff} \
+    opts_snaphmm=${snap}
+    maker -fix_nucleotides 1> ${name}.log
+    mv $all_gff $prev
+    gff3_merge -d *output*/*datastore*.log
     """
     //
 }
 
-// bug: Doing this way doesn't seem to be working
-// todo: Fix this up!!!
-process MAKER_B {
-    tag "Annotating $chromosome,$fasta,$est2genome,$protein2genome,$repeats,$snap"
-
-    input:
-    tuple val(chromosome)
-    path(fasta)
-    path(est2genome)
-    path(protein2genome)
-    path(snap)
-    path(repeats)
-    val(args)
-
-    output:
-    tuple val(sample), path("*.output")
-    //
-    script:
-    sample = chromosome.replaceAll(/_.*/, '')
-    """
-    maker -CTL
-    maker_cli.py ${args} \
-    opts_genome=$fasta \
-    opts_snaphmm=$snap \
-    opts_est_gff=$est2genome \
-    opts_protein_gff=$protein2genome \
-    opts_rm_gff=$repeats
-    maker -fix_nucleotides
-    """
-    //
-}
-
+// Not needed
 process GET_GFF {
     tag "Extracting $name, round $round"
 
@@ -99,12 +80,13 @@ process GET_GFF {
     //
     output:
     tuple val(formatted), path("*.all.gff"), emit: all
-    tuple val(formatted), path("*{est2genome,repeats,protein2genome}.gff"), emit: evidence
+    path("*repeats.gff"), emit: repeats
+    path("*protein2genome.gff"), emit: protein
+    path("*est2genome.gff"), emit: ests
     tuple val(formatted), path("*{.fasta,.txt}"), emit: fastas
 
     exec:
     formatted = maker_out.baseName[2..-1].replaceAll(/.maker/, '')
-    //todo: Something is wrong with the way you are extracting the protein and genome stuff
     shell:
     '''
     name=$(echo *output* | sed -e 's/.maker.output//' )
