@@ -10,6 +10,7 @@ include { SNAP as SNAP2 } from "../modules/snap"
 include { GENEMARKS_ES } from "../modules/genemarksES"
 include { AUGUSTUS; AUGUSTUS_MAKER } from "../modules/augustus"
 include { MAKER_BUSCO } from "../modules/busco"
+include { FIND_BUSCO } from "../modules/find_buscos"
 
 /*
  * Workflow
@@ -83,3 +84,10 @@ workflow annotation {
     MAKER_BUSCO(merged.filter { it[1] =~/transcripts/ }, 'transcriptome', params.outdirAnnotate)
 }
 
+workflow get_buscos {
+    take:
+    busco_dir
+
+    main:
+    FIND_BUSCO(busco_dir)
+}

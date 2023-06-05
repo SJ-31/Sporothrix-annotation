@@ -3,7 +3,7 @@
  */
 
 include { assembly; assess } from './workflows/assembly'
-include { train_genemarks; annotation } from './workflows/annotation'
+include { train_genemarks; annotation; get_buscos } from './workflows/annotation'
 include { repeats } from './workflows/repeatlibrary'
 include { rnaseq } from './workflows/rnaseq'
 include { scaffold; assess_scaffolds } from './workflows/finishing'
@@ -59,6 +59,10 @@ Channel.fromPath(
     .map { it -> [ it.baseName, it ] }
     .set { scaffold_ch }
 
+Channel.fromPath(
+    "$params.results/annotation/S*/S*BUSCO")
+    .map { it -> [ it.baseName.replaceAll(/-.*/), it ]}
+    .set { busco_results_ch }
 /*
  *
  */
@@ -78,4 +82,6 @@ workflow {
     // train_genemarks(all_scaffs)
     if ( params.annotate_scaffold )
         annotation(chromosome_ch, scaffold_ch)
+    if ( params.find_buscos )
+        get_buscos(busco_results_ch)
 }

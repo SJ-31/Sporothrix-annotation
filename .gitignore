@@ -1,4 +1,5 @@
 workflow*
+nf-core*
 presentation/*
 *.log
 busco_downloads/*
