@@ -14,7 +14,9 @@ for gene in complete.iterrows():
     strand = gene[1]["Strand"]
     description: str = gene[1]['Description']
     if isinstance(description, str):
-        description: str = description.replace(" ", "_").replace("/", "")
+        for _ in "()`/,'":
+            description: str = description.replace(_, "")
+        description: str = description.replace(" ", "_")
     for fasta in SeqIO.parse((f"{busco_dir}/busco_sequences/"
                               f"single_copy_busco_sequences/"
                               f"{id}.fna"), "fasta"):
