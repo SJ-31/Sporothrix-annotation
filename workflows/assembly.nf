@@ -21,18 +21,9 @@ include { QUAST } from '../modules/quast'
 
 workflow assembly {
     take:
-    raw
+    cleaned
 
     main:
-    // FASTQC_I(raw, params.outdirInitial) // Initial quality check
-    //     .zip.collect().set { fastqcInitial_ch }
-    // COMBINE_QC(fastqcInitial_ch)
-    FASTP(raw, params.outdirTrim) // Check
-        .set { fastp }
-    BBDUK(fastp.fastq, params.mtDNA,
-            params.bbduk_args, params.bbdukOut).set { bbduk_ch }
-    // FASTQC_T(fastp.fastq, params.outdirTrim) // Verify results of trimming
-    //     .zip.collect().set { fastqcTrim_ch }
     if  ( params.withSpades ) {
         spades_ch = SPADES(fastp.fastq, params.spadesargs)
         EXTRACT_SPADES(spades_ch, params.spadesOut)

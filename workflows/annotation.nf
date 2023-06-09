@@ -90,4 +90,5 @@ workflow get_buscos {
 
     main:
     FIND_BUSCO(busco_dir)
+    // Unsure now which busco genes to get
 }

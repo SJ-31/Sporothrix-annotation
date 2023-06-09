@@ -1,6 +1,7 @@
 process BBDUK {
     memory { 2.GB * task.attempt }
     publishDir "$outdir/", pattern: "*.txt", mode: 'copy'
+    publishDir "$readdir/$name/", pattern: "*B-*fastq.gz", mode: 'copy'
     publishDir "$outdir/", pattern: "*-flagged*"
 
     input:
@@ -8,6 +9,7 @@ process BBDUK {
     path(ref)
     val(args)
     val(outdir)
+    val(readdir)
     //
     output:
     tuple(val(name), path("B-*.fastq.gz"), emit: reads)

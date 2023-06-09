@@ -7,21 +7,24 @@ include { train_genemarks; annotation; get_buscos } from './workflows/annotation
 include { repeats } from './workflows/repeatlibrary'
 include { rnaseq } from './workflows/rnaseq'
 include { scaffold; assess_scaffolds } from './workflows/finishing'
+include { clean_reads } from './workflows/clean_reads'
 
 /*
  * Raw files for assembly, if you don't split up the dataset, will run out of memory
  */
-params.raw = "$projectDir/data/$params.to_assemble/"
+params.raw = "$projectDir/data/raw_dna/"
 params.rna = "$projectDir/data/raw_rna"
 params.results = "$projectDir/results"
 
 raw_ch = Channel.fromFilePairs("$params.raw/S*_R{1,2}_001.fastq.gz")
 rna_ch = Channel.fromFilePairs("$params.rna/*_{1,2}.fastq")
 
+params.clean = "$projectDir/data/cleaned_dna/$params.to_assemble"
+cleaned_ch = Channel.fromFilePairs("$params.clean/B-S*_R{1,2}_001.fastq.gz")
+
 /*
  * Repeat library channels
  */
-
 Channel.fromPath("$projectDir/data/reference/genomes/for_repeats/*")
     .map { it -> [ it.baseName, it ]}
     .set { genome_ch }
@@ -29,7 +32,6 @@ Channel.fromPath("$projectDir/data/reference/genomes/for_repeats/*")
 /*
  * Finishing channels
  */
-
 Channel.fromPath("$projectDir/results/assembly/$params.to_scaffold/*")
     .map { it -> [ it.baseName.replaceAll(/_.*/, '').replaceAll(/.*-/, '')
                 , it ]}
@@ -58,17 +60,41 @@ Channel.fromPath(
     "$params.results/assembly/5-scaffolds/ragout/${params.current}_scaffolds.fasta")
     .map { it -> [ it.baseName, it ] }
     .set { scaffold_ch }
-
 Channel.fromPath(
     "$params.results/annotation/S*/S*BUSCO")
     .map { it -> [ it.baseName.replaceAll(/-.*/), it ]}
     .set { busco_results_ch }
+
 /*
  *
  */
+
+if ( params.clean_raw )
+    println "Cleaning reads"
+if ( params.assemble_genome )
+    println "Assembling genome"
+if ( params.assess_assemblies )
+    println "Assessing assemblies"
+if ( params.assemble_transcriptome )
+    println "Assembling transcriptome"
+if ( params.get_replib )
+    println "Constructing repeat libraries"
+if ( params.scaffold_contigs )
+    println "Scaffolding contigs"
+if ( params.assess_scaffolds )
+    println "Assessing scaffolds"
+if ( params.train_genemarks )
+    println "training genemarks"
+if ( params.annotate_scaffold )
+    println "Annotating scaffolds"
+if ( params.find_buscos )
+    println "Extracting selected BUSCO genes"
+
 workflow {
+    if ( params.clean_raw )
+        clean(raw_ch)
     if ( params.assemble_genome )
-        assembly(raw_ch)
+        assembly(clean_ch)
     if ( params.assess_assemblies )
         assess(assess_ch)
     if ( params.assemble_transcriptome )
@@ -79,7 +105,8 @@ workflow {
         scaffold(contigs_ch, contigs_reads_ch, ref_ch )
     if ( params.assess_scaffolds )
         assess_scaffolds()
-    // train_genemarks(all_scaffs)
+    if ( params.train_genemarks )
+        train_genemarks(all_scaffs)
     if ( params.annotate_scaffold )
         annotation(chromosome_ch, scaffold_ch)
     if ( params.find_buscos )
