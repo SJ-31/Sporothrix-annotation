@@ -5,6 +5,7 @@
 include { assembly; assess } from './workflows/assembly'
 include { train_genemarks; annotation; get_buscos } from './workflows/annotation'
 include { repeats } from './workflows/repeatlibrary'
+include { variant_calling } from './workflows/variant_calling'
 include { rnaseq } from './workflows/rnaseq'
 include { scaffold; assess_scaffolds } from './workflows/finishing'
 include { clean_reads } from './workflows/clean_reads'
@@ -20,7 +21,7 @@ raw_ch = Channel.fromFilePairs("$params.raw/S*_R{1,2}_001.fastq.gz")
 rna_ch = Channel.fromFilePairs("$params.rna/*_{1,2}.fastq")
 
 params.clean = "$projectDir/data/cleaned_dna/$params.to_assemble"
-cleaned_ch = Channel.fromFilePairs("$params.clean/B-S*_R{1,2}_001.fastq.gz")
+clean_ch = Channel.fromFilePairs("$params.clean/B-S*_R{1,2}_001.fastq.gz")
 
 /*
  * Repeat library channels
@@ -66,33 +67,17 @@ Channel.fromPath(
     .set { busco_results_ch }
 
 /*
- *
+ * Variant calling channels
  */
 
-if ( params.clean_raw )
-    println "Cleaning reads"
-if ( params.assemble_genome )
-    println "Assembling genome"
-if ( params.assess_assemblies )
-    println "Assessing assemblies"
-if ( params.assemble_transcriptome )
-    println "Assembling transcriptome"
-if ( params.get_replib )
-    println "Constructing repeat libraries"
-if ( params.scaffold_contigs )
-    println "Scaffolding contigs"
-if ( params.assess_scaffolds )
-    println "Assessing scaffolds"
-if ( params.train_genemarks )
-    println "training genemarks"
-if ( params.annotate_scaffold )
-    println "Annotating scaffolds"
-if ( params.find_buscos )
-    println "Extracting selected BUSCO genes"
+Channel.fromPath(params.vc_ref)
+    .set { vc_ref_ch }
+Channel.fromFilePairs("$params.clean/${params.called_reads}/B-S*_R{1,2}_001.fastq.gz")
+    .set { call_reads_ch }
 
 workflow {
-    if ( params.clean_raw )
-        clean(raw_ch)
+    if ( params.clean_reads )
+        clean_reads(raw_ch)
     if ( params.assemble_genome )
         assembly(clean_ch)
     if ( params.assess_assemblies )
@@ -111,4 +96,6 @@ workflow {
         annotation(chromosome_ch, scaffold_ch)
     if ( params.find_buscos )
         get_buscos(busco_results_ch)
+    if ( params.call )
+        variant_calling(vc_ref_ch, call_reads_ch)
 }

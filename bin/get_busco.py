@@ -1,37 +1,26 @@
 #!/bin/env Python
 import sys
 from Bio import SeqIO
+import pandas as pd
 
-types: dict = {'single_copy_busco_sequences': [],
-               'multi_copy_busco_sequences': []}
-
+seqs: str = ""
 look_in = sys.argv[1]
-output_file_name = sys.argv[2]
-find = set(sys.argv[3:])
 
 busco_dir: str = f"{look_in}/run_sordariomycetes_odb10"
-with open(f"{busco_dir}/full_table.tsv") as f:
-    contents = f.read()
-    records = contents[contents.rfind('#')+1:].splitlines()
+table = pd.read_csv(f"{busco_dir}/full_table.tsv", sep="\t",  skiprows=2)
+complete = table[table["Status"] == "Complete"]
+for gene in complete.iterrows():
+    id = gene[1]['# Busco id']
+    strand = gene[1]["Strand"]
+    description: str = gene[1]['Description']
+    if isinstance(description, str):
+        description: str = description.replace(" ", "_").replace("/", "")
+    for fasta in SeqIO.parse((f"{busco_dir}/busco_sequences/"
+                              f"single_copy_busco_sequences/"
+                              f"{id}.fna"), "fasta"):
+        seqs += f">{id}|{description}|{strand}|{fasta.id}\n"
+        seqs += f"{fasta.seq}\n"
 
-for line in records:
-    record = line.strip().split('\t')
-    geneID = record[0]
-    status = record[1]
-    if status == 'Missing' and geneID in find:
-        find.remove(geneID)
-    elif status == 'Complete' and geneID in find:
-        types['single_copy_busco_sequences'].append(geneID)
-    elif status == 'Duplicated' and geneID in find:
-        types['multi_copy_busco_sequences'].append(geneID)
-
-result = ''
-for t in types.keys():
-    for gene in types[t]:
-        for fasta in SeqIO.parse(f"{busco_dir}/busco_sequences/{t}/{gene}.fna",
-                                 "fasta"):
-            result += f">{gene}:{fasta.id}\n"
-            result += f"{fasta.seq}\n"
-final = open(f"{output_file_name}-found.fasta", "w")
-final.write(result)
-final.close()
+output = open("single_copy_busco_sequences.fasta", "w")
+output.write(seqs)
+output.close()

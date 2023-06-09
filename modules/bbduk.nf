@@ -17,8 +17,8 @@ process BBDUK {
     path("*.txt"), emit: log
 
     exec:
-    def forw = reads[0].baseName.replaceAll(/T-/, 'B-')
-    def rev = reads[1].baseName.replaceAll(/T-/, 'B-')
+    def forw = reads[0].baseName.replaceAll(/T-/, 'B-').replaceAll(/\..*/, '')
+    def rev = reads[1].baseName.replaceAll(/T-/, 'B-').replaceAll(/\..*/, '')
     //
     script:
     """
