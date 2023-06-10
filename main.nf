@@ -2,7 +2,7 @@
  * Workflow imports
  */
 
-include { assembly; assess } from './workflows/assembly'
+include { assembly } from './workflows/assembly'
 include { train_genemarks; annotation; get_buscos } from './workflows/annotation'
 include { repeats } from './workflows/repeatlibrary'
 include { variant_calling } from './workflows/variant_calling'
@@ -72,7 +72,7 @@ Channel.fromPath(
 
 Channel.fromPath(params.vc_ref)
     .set { vc_ref_ch }
-Channel.fromFilePairs("$params.clean/${params.called_reads}/B-S*_R{1,2}_001.fastq.gz")
+Channel.fromFilePairs("$projectDir/data/cleaned_dna/${params.called_reads}/B-S*_R{1,2}_001.fastq.gz")
     .set { call_reads_ch }
 
 workflow {
@@ -80,8 +80,6 @@ workflow {
         clean_reads(raw_ch)
     if ( params.assemble_genome )
         assembly(clean_ch)
-    if ( params.assess_assemblies )
-        assess(assess_ch)
     if ( params.assemble_transcriptome )
         rnaseq(rna_ch)
     if ( params.get_replib )

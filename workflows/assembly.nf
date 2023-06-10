@@ -25,33 +25,27 @@ workflow assembly {
 
     main:
     if  ( params.withSpades ) {
-        spades_ch = SPADES(fastp.fastq, params.spadesargs)
-        EXTRACT_SPADES(spades_ch, params.spadesOut)
-            .set{ spadesA_ch }
+        EXTRACT_SPADES(SPADES(cleaned, params.spadesargs), params.spadesOut)
+            .set{ spades_ch }
+    } else { spades_ch = Channel.empty()
     }
     if ( params.withMegahit ) {
-        megahit_ch = MEGAHIT(bbduk_ch.reads)
-        EXTRACT_MH(megahit_ch, params.megaOut)
+        EXTRACT_MH(MEGAHIT(cleaned), params.megaOut)
+            .set { megahit_ch }
+    } else { megahit_ch = Channel.empty()
     }
+    assemblies = megahit_ch.mix(spades_ch)
+
     // Quality assessment
-}
-
-workflow assess {
-    take:
-    assemblies
-
-    main:
-    EXTRACT_BUSCO(
-        BUSCO(assemblies, 'genome', params.buscoOut)
-    ).branch{
-        spades: it =~ /spades/
-        megahit: it =~ /megahit/
-    }.set { busco_ch }
-
-    assemblies.flatten().branch {
-        fasta: it =~/fasta/
-    }.set { genomes }
-
-    QUAST(genomes.fasta.collect(), params.quastOut, params.quastRef, params.quastRefF,
-        params.quast_args)
+    if ( params.assess_assemblies )
+        BUSCO(assemblies, 'genome', params.buscoOutA)
+        .branch{
+            spades: it =~ /spades/
+            megahit: it =~ /megahit/
+        }.set { busco_ch }
+        // assemblies.flatten().branch {
+        //     fasta: it =~/fasta/
+        // }.set { genomes }
+        // QUAST(genomes.fasta.collect(), params.quastOut, params.quastRef,
+        // params.quastRefF, params.quast_args)
 }

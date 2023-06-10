@@ -1,4 +1,7 @@
 #!/bin/env Python
+
+# Obtain all single-copy busco sequences when given the path to busco output
+
 import sys
 from Bio import SeqIO
 import pandas as pd

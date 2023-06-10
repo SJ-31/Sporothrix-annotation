@@ -1,6 +1,6 @@
 process BUSCO {
     publishDir "$outdir/${assembler}", mode: 'copy'
-    condha '/home/sc31/Bio_SDD/miniconda3/envs/busco'
+    conda '/home/sc31/Bio_SDD/miniconda3/envs/busco'
 
     input:
     tuple val(assembler), path(assembly)
