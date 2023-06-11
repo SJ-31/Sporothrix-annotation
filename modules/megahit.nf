@@ -24,11 +24,11 @@ process EXTRACT_MH {
     val(outdir)
     //
     output:
-    tuple val("megahit"), path("${run}_contigs.fasta")
+    tuple val("${run}"), path("${run}_megahit.fasta")
     //
     script:
     """
-    cp $run/final.contigs.fa ./${run}_contigs.fasta
+    cp $run/final.contigs.fa ./${run}_megahit.fasta
     """
     //
 }
