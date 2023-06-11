@@ -1,4 +1,5 @@
 process MARKDUPLICATESSPARK {
+    tag "Calling on $pair_id"
     publishDir "${outdir}/dedup_sorted/$pair_id", mode:'copy'
 
     input:
