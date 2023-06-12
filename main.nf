@@ -75,6 +75,8 @@ Channel.fromPath(params.vc_ref)
 Channel.fromFilePairs("$projectDir/data/cleaned_dna/${params.called_reads}/B-S*_R{1,2}_001.fastq.gz")
     .set { call_reads_ch }
 
+include { VCF_GET_REGION } from "./modules/region_from_vcf"
+
 workflow {
     if ( params.clean_reads )
         clean_reads(raw_ch)
@@ -96,4 +98,7 @@ workflow {
         get_buscos(busco_results_ch)
     if ( params.call )
         variant_calling(vc_ref_ch, call_reads_ch)
+    // VCF_GET_REGION(Channel.fromPath("$params.vc/variants/*/*merged.vcf.gz")
+    //     .map { it ->  [ it.baseName.replaceAll(/.*-/, '').replaceAll(/_.*/, ''), it ] }, "$params.vc/gene_vars", params.extracted_genes
+    // )
 }
