@@ -5,7 +5,7 @@
 include { assembly } from './workflows/assembly'
 include { train_genemarks; annotation; get_buscos } from './workflows/annotation'
 include { repeats } from './workflows/repeatlibrary'
-include { variant_calling } from './workflows/variant_calling'
+include { variant_calling; extract_buscos } from './workflows/variant_calling'
 include { rnaseq } from './workflows/rnaseq'
 include { scaffold; assess_scaffolds } from './workflows/finishing'
 include { clean_reads } from './workflows/clean_reads'
@@ -78,6 +78,9 @@ Channel.fromFilePairs("$projectDir/data/cleaned_dna/${params.called_reads}/B-S*_
 include { VCF_GET_REGION } from "./modules/region_from_vcf"
 
 workflow {
+    /*
+     * Assembly
+     */
     if ( params.clean_reads )
         clean_reads(raw_ch)
     if ( params.assemble_genome )
@@ -90,15 +93,25 @@ workflow {
         scaffold(contigs_ch, contigs_reads_ch, ref_ch )
     if ( params.assess_scaffolds )
         assess_scaffolds()
+
+    /*
+     * Annotation
+     */
     if ( params.train_genemarks )
         train_genemarks(all_scaffs)
     if ( params.annotate_scaffold )
         annotation(chromosome_ch, scaffold_ch)
-    if ( params.find_buscos )
+    if ( params.collect_buscos )
+    // Combine busco gene sequences from busco runs on different sample
         get_buscos(busco_results_ch)
+
+    /*
+     * Variant calling
+     */
     if ( params.call )
         variant_calling(vc_ref_ch, call_reads_ch)
-    // VCF_GET_REGION(Channel.fromPath("$params.vc/variants/*/*merged.vcf.gz")
-    //     .map { it ->  [ it.baseName.replaceAll(/.*-/, '').replaceAll(/_.*/, ''), it ] }, "$params.vc/gene_vars", params.extracted_genes
-    // )
+    if ( params.busco_bam_msa )
+    // Extract busco sequences from aligned BAM file and generate a multiple sequence
+    //  alignment
+
 }
