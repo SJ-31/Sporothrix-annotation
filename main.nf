@@ -34,17 +34,10 @@ Channel.fromPath("$projectDir/data/reference/genomes/for_repeats/*")
  * Finishing channels
  */
 Channel.fromPath("$projectDir/results/assembly/$params.to_scaffold/*")
-    .map { it -> [ it.baseName.replaceAll(/_.*/, '').replaceAll(/.*-/, '')
-                , it ]}
+    .map { it -> [ it.baseName.replaceAll(/_.*/, '').replaceAll(/.*-/, ''), it ]}
     .set { contigs_ch }
-contigs_ch.combine(raw_ch, by: 0)
-    .set { contigs_reads_ch }
 Channel.fromPath("$projectDir/data/reference/genomes/scaffold_ref/*")
     .collect().set { ref_ch }
-Channel.fromPath(params.genomes)
-    .map { it -> it.baseName + '.fasta,2' }
-    .collectFile(name: 'ref.txt', newLine: true )
-    .set { ref_config }
 
 /*
  * Annotation channels
@@ -52,7 +45,7 @@ Channel.fromPath(params.genomes)
 annotation = "$params.results/assembly/7-aligned/$params.current/*"
 Channel.fromPath("$params.results/assembly/5-scaffolds/ragout/*.fasta")
     .map { it -> [ it.baseName, it ] }
-    .set { all_scaffs }
+    .set { train_ch }
 Channel.fromPath(
     "$annotation")
     .map {it -> [ it.baseName, it ]}
@@ -69,13 +62,10 @@ Channel.fromPath(
 /*
  * Variant calling channels
  */
-
 Channel.fromPath(params.vc_ref)
     .set { vc_ref_ch }
 Channel.fromFilePairs("$projectDir/data/cleaned_dna/${params.called_reads}/B-S*_R{1,2}_001.fastq.gz")
     .set { call_reads_ch }
-
-include { VCF_GET_REGION } from "./modules/region_from_vcf"
 
 workflow {
     /*
@@ -90,7 +80,7 @@ workflow {
     if ( params.get_replib )
         repeats(genome_ch)
     if ( params.scaffold_contigs )
-        scaffold(contigs_ch, contigs_reads_ch, ref_ch )
+        scaffold(contigs_ch, ref_ch )
     if ( params.assess_scaffolds )
         assess_scaffolds()
 
@@ -98,7 +88,7 @@ workflow {
      * Annotation
      */
     if ( params.train_genemarks )
-        train_genemarks(all_scaffs)
+        train_genemarks(train_ch)
     if ( params.annotate_scaffold )
         annotation(chromosome_ch, scaffold_ch)
     if ( params.collect_buscos )
@@ -113,5 +103,5 @@ workflow {
     if ( params.busco_bam_msa )
     // Extract busco sequences from aligned BAM file and generate a multiple sequence
     //  alignment
-
+        extract_buscos(params.vc_ref, params.vc_align)
 }
