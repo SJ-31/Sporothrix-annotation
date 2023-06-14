@@ -1,9 +1,12 @@
 #!/bin/bash
-busco_ref=$1
-gff=$2
-fasta=$3
+# Map busco genes to their locations on a gff file and their ncbi counterparts
+name=$1
+busco_ref=$2
+gff=$3
+fasta=$4
+output=$5
 info="#BUSCO ID\tType\tSequence\tStart\tStop\tNCBI descriptor\tBUSCO descriptor"
-echo -e $info > gff_busco.txt
+echo -e "$info" > "$output"
 
 function read_region {
     gffread -J -r "${region}" "$gff" -g "$fasta" | \
@@ -24,8 +27,9 @@ while read line
     on_gff=($(read_region))
     ids="${fields[0]}\t${on_gff[1]}\t${on_gff[0]}\t"
     locs="${on_gff[2]}\t${on_gff[3]}\t"
+    echo -e "${ids}${locs} vs ${fields[2]} ${fields[3]}"
     info="${on_gff[4]}\t${fields[5]}"
-    echo -e "${ids}${locs}${info}" >> gff_busco.txt
+    echo -e "${ids}${locs}${info}" >> "$output"
     done < "$busco_ref"
 
 

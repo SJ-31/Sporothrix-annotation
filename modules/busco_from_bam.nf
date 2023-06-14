@@ -14,7 +14,7 @@ process BUSCO_FROM_BAM {
     minimap2 -a $reference $sample > aligned.sam
     samtools sort aligned.sam -o aligned.bam
     samtools index aligned.bam
-    busco_from_bam.sh $name $busco_ref aligned.bam
+    bfb_busco_gff.sh $name $busco_ref aligned.bam
     """
     // fields[0] = Gene busco ID
     // fields[1] = Gene sequence location
