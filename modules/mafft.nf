@@ -1,4 +1,4 @@
-process MUSCLE {
+process MAFFT {
     publishDir "$outdir", mode: 'copy'
     input:
     path(combined_fastas)
@@ -10,6 +10,7 @@ process MUSCLE {
     script:
     name = combined_fastas.baseName.replaceAll(/_.*/, '')
     """
-    muscle -align ${combined_fastas} -output ${name}_aligned.fasta
+    mafft --preservecase --auto \
+    ${combined_fastas} > ${name}_aligned.fasta
     """
 }
