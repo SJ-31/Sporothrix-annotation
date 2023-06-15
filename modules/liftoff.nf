@@ -9,7 +9,7 @@ process LIFTOFF {
     val(outdir)
     //
     output:
-    tuple val(name), path("${name}_lifted.gff"), path(reference)
+    tuple val(name), path("${name}_lifted.gff"), path(target)
     //
     script:
     """

@@ -49,9 +49,16 @@ This repository contains the code used in the paper ... It consists of Nextflow 
 - The variant calling steps are identical to that of Khalfan (2020)'s [implementation](https://gencore.bio.nyu.edu/variant-calling-pipeline-gatk4/Khalfan), with covariate analysis disabled (due to an R bug) and updated from the DSL 1 (which is deprecated in the most recent version of Nextflow) to DSL 2
   - The short reads were aligned to the reference sequence
 - **Output:** vcf files for each sample
-- Genes of interest were identified by manually cross-referencing BUSCO output with the GCF_000961545.1 gff file
+- Genes of interest were first identified by manually cross-referencing BUSCO output with the GCF_000961545.1 gff file
   - Their regions were extracted from the vcf file using Bcftools
+  - **Thu 15 Jun, 2023 Update:** a script `busco_to_gff.sh` was made to do this automatically - it maps every single-copy busco gene to a gene described in the gff file, obtaining a more precise range for the gene in the process
 - The `bin` directory contains python scripts for extracting single-copy BUSCO gene sequences from BUSCO output and combining them across samples
+- Extraction steps
+    * Liftoff: Lift over genome annotations from GCF_000961545 reference gff onto scaffolds
+    * awk: Use the BUSCO-gff mapping for the GCF_000961545 reference to filter  the single-copy BUSCO genes from the lifted gffs, generating a tsv file with their new locations on the lifted gff*
+        + *The original BUSCO output table describes the BUSCO gene locations specific for the GCF_000961545 reference. Their locations may be different with each assembly 
+    * gffread: Extract the sequences of the BUSCO genes in fasta format
+
 
 # References
 - Assembly [Internet]. Bethesda (MD): National Library of Medicine (US), National Center for Biotechnology Information; [1988] – . Accession No. GCF_000961545.1, S_schenckii_v1reference; [cited 2023 Jun 23]. Available from: https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000961545.1/
