@@ -1,14 +1,15 @@
 process COMBINE {
+    publishDir "$outdir", mode: 'copy'
+
     input:
-    path("*")
+    tuple val(group), path(samples)
+    path(outdir)
     //
     output:
-    path("combined")
-    //
+    path({"${group}_{combined,dne}.fasta"})
     script:
     """
-    mkdir combined
-    ls --ignore=combined | xargs -I{} mv {} combined/
+    cat $samples > ${group}_combined.fasta
+    [ -s ${group}_combined.fasta ] || touch ${group}_dne.fasta
     """
-    //
 }

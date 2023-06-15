@@ -4,7 +4,7 @@ process BUSCO_FROM_GFF {
     tuple val(name), path(busco_gff_tsv), path(gff), path(fasta)
     //
     output:
-    tuple val(name), path("*.fasta")
+    path("*.fasta")
     //
     script:
     """
