@@ -1,5 +1,4 @@
 process BQSR {
-    publishDir "${outdir}/bqsr/$pair_id", mode:'copy'
 
     input:
     tuple (val(pair_id),
@@ -7,7 +6,6 @@ process BQSR {
 	path(filtered_snps),
 	path(filtered_indels))
     tuple val(name), path(ref), path(other_ref)
-    val(outdir)
 
     output:
     tuple val(pair_id), path("${pair_id}_recal_data.table"), path("${pair_id}_post_recal_data.table"), emit: analyze_covariates_in_ch

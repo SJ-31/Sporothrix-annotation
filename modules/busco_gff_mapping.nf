@@ -1,9 +1,9 @@
 process GFF_BUSCO_MAP {
-    publishDir "$outdir", mode: 'copy'
+    publishDir "$outdir", mode: 'copy', pattern: "*tsv"
 
     input:
-    tuple val(name), path(gff), path(fasta)
-    val(busco_ref)
+    tuple val(name), path(liftover), path(fasta)
+    val(busco_gff_ref)
     val(outdir)
     //
     output:
@@ -11,7 +11,7 @@ process GFF_BUSCO_MAP {
     //
     script:
     """
-
+    liftoff_transfer.sh $name $liftover $busco_gff_ref ${name}_liftoff_busco.tsv
     """
     //
 }

@@ -1,5 +1,5 @@
 process LIFTOFF {
-    publishDir
+    publishDir "$outdir", mode: 'copy', pattern: "*gff"
     conda '/home/sc31/Bio_SDD/miniconda3/envs/liftoff'
 
     input:
@@ -13,7 +13,7 @@ process LIFTOFF {
     //
     script:
     """
-    liftoff $target $reference $reference_gff -o ${name}_lifted.gff
+    liftoff $target $reference -g $reference_gff -o ${name}_lifted.gff
     """
     //
 }
