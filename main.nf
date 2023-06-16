@@ -13,14 +13,9 @@ include { clean_reads } from './workflows/clean_reads'
 /*
  * Raw files for assembly, if you don't split up the dataset, will run out of memory
  */
-params.raw = "$projectDir/data/raw_dna/"
-params.rna = "$projectDir/data/raw_rna"
-params.results = "$projectDir/results"
 
 raw_ch = Channel.fromFilePairs("$params.raw/S*_R{1,2}_001.fastq.gz")
 rna_ch = Channel.fromFilePairs("$params.rna/*_{1,2}.fastq")
-
-params.clean = "$projectDir/data/cleaned_dna/$params.to_assemble"
 clean_ch = Channel.fromFilePairs("$params.clean/B-S*_R{1,2}_001.fastq.gz")
 
 /*
@@ -42,8 +37,8 @@ Channel.fromPath("$projectDir/data/reference/genomes/scaffold_ref/*")
 /*
  * Annotation channels
  */
-annotation = "$params.results/assembly/7-aligned/$params.current/*"
-Channel.fromPath("$params.results/assembly/5-scaffolds/ragout/*.fasta")
+annotation = "$params.assembly/7-aligned/$params.current/*"
+Channel.fromPath("$params.scaffolds/ragout/*.fasta")
     .map { it -> [ it.baseName, it ] }
     .set { train_ch }
 Channel.fromPath(
@@ -51,11 +46,11 @@ Channel.fromPath(
     .map {it -> [ it.baseName, it ]}
     .set { chromosome_ch  }
 Channel.fromPath(
-    "$params.results/assembly/5-scaffolds/ragout/${params.current}_scaffolds.fasta")
+    "$params.scaffolds/${params.current}_scaffolds.fasta")
     .map { it -> [ it.baseName, it ] }
     .set { scaffold_ch }
 Channel.fromPath(
-    "$params.results/annotation/S*/S*BUSCO")
+    "$params.annotation/S*/S*BUSCO")
     .map { it -> [ it.baseName.replaceAll(/-.*/), it ]}
     .set { busco_results_ch }
 
@@ -100,8 +95,8 @@ workflow {
      */
     if ( params.call )
         variant_calling(vc_ref_ch, call_reads_ch)
-    if ( params.busco_bam_msa )
+    if ( params.extracted_genes )
     // Extract busco sequences from aligned BAM file and generate a multiple sequence
     //  alignment
-        extract_buscos(params.vc_ref, params.vc_align)
+        extract_buscos(params.vc_ref, params.vc_align, clean_ch)
 }

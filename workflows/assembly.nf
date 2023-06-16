@@ -13,12 +13,14 @@ workflow assembly {
 
     main:
     if  ( params.withSpades ) {
-        EXTRACT_SPADES(SPADES(cleaned, params.spadesargs), params.spadesOut)
+        EXTRACT_SPADES(SPADES(cleaned, params.spadesargs),
+        "$params.assembly/3-spades")
             .set{ spades_ch }
     } else { spades_ch = Channel.empty()
     }
     if ( params.withMegahit ) {
-        EXTRACT_MH(MEGAHIT(cleaned), params.megaOut)
+        EXTRACT_MH(MEGAHIT(cleaned),
+        "$params.assembly/3-megahit")
             .set { megahit_ch }
     } else { megahit_ch = Channel.empty()
     }
@@ -26,7 +28,8 @@ workflow assembly {
 
     // Quality assessment
     if ( params.assess_assemblies )
-        BUSCO(assemblies, 'genome', params.buscoOutA)
+        BUSCO(assemblies, 'genome',
+        "$params.assemblies/4-assess_assemblies")
         .branch{
             spades: it =~ /spades/
             megahit: it =~ /megahit/
@@ -34,6 +37,7 @@ workflow assembly {
         assemblies.flatten().branch {
             fasta: it =~/fasta/
         }.set { genomes }
-        QUAST(genomes.fasta.collect(), params.quastOut, params.quastRef,
+        QUAST(genomes.fasta.collect(), "$params.assemblies/4-assess_assemblies",
+        params.quastRef,
         params.quastRefF, params.quast_args)
 }

@@ -1,10 +1,17 @@
 #!/bin/bash
 # Extract gff regions as fasta files
-
-sample=$1
-busco_gff_tsv=$2
-sample_gff=$3
-sample_fasta=$4
+while getopts 's:b:f:g:' option
+do 
+    case "${option}"
+        in 
+        s) sample=${OPTARG};;
+        b) busco_gff_tsv=${OPTARG};;
+        f) sample_fasta=${OPTARG};;
+        g) sample_gff=${OPTARG};;
+        *) echo "Invalid"
+            exit 1;;
+    esac
+done
 
 while IFS= read -r line
     do

@@ -42,11 +42,11 @@ workflow annotation {
         scaffolds.set { annotating }
     else if ( params.annotate_what == 'chromosome' )
         chromosomes.set { annotating }
-    MAKER_F(annotating, params.makerR1, params.outdirAnnotate)
+    MAKER_F(annotating, params.makerR1, params.annotation)
         .set { makerR1 }
 
     // Train snap
-    SNAP(makerR1.gff, '1', params.outdirAnnotate)
+    SNAP(makerR1.gff, '1', params.annotation)
         .set { snap1_ch }
     snap1_ch.hmm.join(makerR1.gff).join(annotating).flatten().branch{
             name: !(it =~ /\./)
@@ -57,23 +57,23 @@ workflow annotation {
 
     // Second round
     MAKER_R2(r2_ch.name, r2_ch.gff, r2_ch.fasta, r2_ch.snap, '2',
-    params.makerR2, params.outdirAnnotate)
+    params.makerR2, params.annotation)
         .set { makerR2 }
     //  Second SNAP training
-    SNAP2(makerR2.gff, '2', params.outdirAnnotate)
+    SNAP2(makerR2.gff, '2', params.annotation)
         .set { snap2_ch }
     snap2_ch.hmm.join(makerR2.gff).join(annotating).flatten().branch(makerNext)
         .set { r3_ch }
 
     // Third round
     MAKER_R3(r3_ch.name, r3_ch.gff, r3_ch.fasta, r3_ch.snap, '3',
-    params.makerR3, params.outdirAnnotate)
+    params.makerR3, params.annotation)
         .set { maker_final }
     MAKER_COMBINE(maker_final.gff.map { it -> [ it[0].replaceAll(/_.*/,''),
-    it[1] ]}.groupTuple(), params.outdirAnnotate)
+    it[1] ]}.groupTuple(), params.annotation)
 
     // Collect results
-    MAKER_GET_FASTA(maker_final.makerout, params.outdirAnnotate)
+    MAKER_GET_FASTA(maker_final.makerout, params.annotation)
         .set { fastas }
     fastas.protein.map {it -> [ it[0].replaceAll(/_.*/, ''), it[1] ] }
     .transpose()
@@ -83,11 +83,11 @@ workflow annotation {
     .transpose()
     .groupTuple().map { it -> [ it[0], 'transcripts', it[1] ]}
         .set { all_transcripts }
-    MAKER_MERGE_FASTA(all_prot.mix(all_transcripts), params.outdirAnnotate)
+    MAKER_MERGE_FASTA(all_prot.mix(all_transcripts), params.annotation)
         .set { merged }
 
     // Verify transcripts
-    BUSCO(merged.filter { it[1] =~/transcripts/ }, 'transcriptome', params.outdirAnnotate)
+    BUSCO(merged.filter { it[1] =~/transcripts/ }, 'transcriptome', params.annotation)
 }
 
 workflow get_buscos {
