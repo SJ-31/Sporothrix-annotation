@@ -51,13 +51,24 @@ This repository contains the code used in the paper ... It consists of Nextflow 
 - **Output:** vcf files for each sample
 - Genes of interest were first identified by manually cross-referencing BUSCO output with the GCF_000961545.1 gff file
   - Their regions were extracted from the vcf file using Bcftools
-  - **Thu 15 Jun, 2023 Update:** a script `busco_to_gff.sh` was made to do this automatically - it maps every single-copy busco gene to a gene described in the gff file, obtaining a more precise range for the gene in the process
 - The `bin` directory contains python scripts for extracting single-copy BUSCO gene sequences from BUSCO output and combining them across samples
-- Extraction steps
-    * Liftoff: Lift over genome annotations from GCF_000961545 reference gff onto scaffolds
-    * awk: Use the BUSCO-gff mapping for the GCF_000961545 reference to filter  the single-copy BUSCO genes from the lifted gffs, generating a tsv file with their new locations on the lifted gff*
-        + *The original BUSCO output table describes the BUSCO gene locations specific for the GCF_000961545 reference. Their locations may be different with each assembly 
-    * gffread: Extract the sequences of the BUSCO genes in fasta format
+
+### BUSCO gene extraction
+- **Input**
+    - GCF_000961545 reference gff file
+    - BUSCO output tables for each assembly
+    - Cleaned reads
+- **Output**
+    * Multiple sequence alignments for all common single-copy BUSCO genes
+    * KALLISTO tables describing the abundance of each single-copy gene
+- 1. A script (`busco_to_gff.sh`) was written to map every single-copy BUSCO gene to a gene described in the gff file, obtaining a more precise range in the process.
+    - The gene table was filtered to leave only the genes that were shared by every sample (~3200 genes). A list of these shared genes was created by processing the output tables  with a python script
+* 2. Liftoff: Lift over genome annotations from GCF_000961545 reference gff onto scaffolds
+* 3. awk: Use the BUSCO-gff mapping from step 1. to filter  the single-copy BUSCO genes from the lifted gffs, generating a tsv file with their new locations on the lifted gff*
+    + *The original BUSCO output table describes the BUSCO gene locations specific for the GCF_000961545 reference. Their locations may be different with each assembly
+* 4. gffread: Extract the sequences of the BUSCO genes in fasta format using the coordinates specified from the previous file. Every gene is stored in a separate fasta file
+* 5. MAFFT: Combine the fasta files of the same genes for each sample into a single file and perform a multiple sequence alignment using MAFFT
+* 6. kallisto: Combine the per-sample fasta files, generating a set of per-sample gene sequences. Pass and the cleaned reads for the sample as input to kallisto for transcript quantification
 
 
 # References
@@ -71,6 +82,7 @@ This repository contains the code used in the paper ... It consists of Nextflow 
 - Assembly [Internet]. Bethesda (MD): National Library of Medicine (US), National Center for Biotechnology Information; [1988] – . Accession No. GCA_016097115.2, Genome assembly SPRO_v1.1; [cited 2023 Jun 23]. Available from: https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_016097115.2/
 - Assembly [Internet]. Bethesda (MD): National Library of Medicine (US), National Center for Biotechnology Information; [1988] – . Accession No. GCA_021396245.1, Genome assembly ASM2139624v1; [cited 2023 Jun 23]. Available from: https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_021396245.1/
 - Schlagenhauf, Edith and Wicker, Thomas (2016). The TREP platform: A curated database of transposable elements. Available at https://trep-db.uzh.ch.
+- Bray, N. L., Pimentel, H., Melsted, P., & Pachter, L. (2016). Near-optimal probabilistic RNA-seq quantification. Nature Biotechnology, 34(5), Article 5. https://doi.org/10.1038/nbt.3519
 - Bushnell, B., Rood, J., & Singer, E. (2017). BBMerge – Accurate paired shotgun read merging via overlap. PLOS ONE, 12(10), e0185056. https://doi.org/10.1371/journal.pone.0185056
 - Campbell, M. S., Holt, C., Moore, B., & Yandell, M. (2014). Genome Annotation and Curation Using MAKER and MAKER-P. Current Protocols in Bioinformatics / Editoral Board, Andreas D. Baxevanis ... [et Al.], 48, 4.11.1-4.11.39. https://doi.org/10.1002/0471250953.bi0411s48
 - Card, D. C., Adams, R. H., Schield, D. R., Perry, B. W., Corbin, A. B., Pasquesi, G. I. M., Row, K., Van Kleeck, M. J., Daza, J. M., Booth, W., Montgomery, C. E., Boback, S. M., & Castoe, T. A. (2019). Genomic Basis of Convergent Island Phenotypes in Boa Constrictors. Genome Biology and Evolution, 11(11), 3123–3143. https://doi.org/10.1093/gbe/evz226
@@ -82,6 +94,7 @@ This repository contains the code used in the paper ... It consists of Nextflow 
 - GenBank [Internet]. Bethesda (MD): National Library of Medicine (US), National Center for Biotechnology Information; [1988] – . Accession No. NC_015923.1; Sporothrix schenckii mitochondrion, complete genome; [cited 2023 Jun 23]. Available from: https://www.ncbi.nlm.nih.gov/nucleotide/NC_015923.1
 - Goubert, C., Craig, R. J., Bilat, A. F., Peona, V., Vogan, A. A., & Protasio, A. V. (2022). A beginner’s guide to manual curation of transposable elements. Mobile DNA, 13(1), 7. https://doi.org/10.1186/s13100-021-00259-7
 - Holt, C., & Yandell, M. (2011). MAKER2: An annotation pipeline and genome-database management tool for second-generation genome projects. BMC Bioinformatics, 12(1), 491. https://doi.org/10.1186/1471-2105-12-491
+- Katoh, K., Kuma, K., Toh, H., & Miyata, T. (2005). MAFFT version 5: Improvement in accuracy of multiple sequence alignment. Nucleic Acids Research, 33(2), 511–518. https://doi.org/10.1093/nar/gki198
 - Khalfan, M. (2020, March 25). Variant Calling Pipeline using GATK4 – Genomics Core at NYU CGSB. https://gencore.bio.nyu.edu/variant-calling-pipeline-gatk4/
 - Kolmogorov, M., Raney, B., Paten, B., & Pham, S. (2014). Ragout—A reference-assisted assembly tool for bacterial genomes. Bioinformatics, 30(12), i302–i309. https://doi.org/10.1093/bioinformatics/btu280
 - Korf, I. (2004). Gene finding in novel genomes. BMC Bioinformatics, 5(1), 59. https://doi.org/10.1186/1471-2105-5-59
