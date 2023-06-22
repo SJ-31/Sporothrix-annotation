@@ -1,6 +1,5 @@
 process RAGOUT {
     conda "/home/sc31/Bio_SDD/miniconda3/envs/ragout"
-    publishDir "$outdir/ragout"
 
     input:
     tuple val(name), path(contigs)

@@ -4,7 +4,7 @@ This repository contains the code used in the paper ... It consists of Nextflow 
 ## Genome/transcriptome assembly
 - **Input:**
   - Raw paired-end fastq files
-  - Reference genome for *Sporothrix schenckii*, GCF_000961545.1
+  - Reference genome fasta and gff for *Sporothrix schenckii*, GCF_000961545.1
   - mtDNA reference
 - 1. FastQC, MultiQC: Evaluate raw paired-end fastq files
     * FastQC provides information about read quality, overrepresented sequences, adapter content and other statistics on a per-fastq-file basis; MultiQC collates the information from multiple FastQC report files for convenience.
@@ -36,15 +36,57 @@ bbduk.sh in1=<reads1> in2=<reads2> \
 ```
 - 4. Spades, Megahit: Assemble reads
   - Both ran in default settings
+```bash
+spades.py \
+    -o <sample_name> \ # The directory to store resulting files.
+    # The final assembly is denoted "scaffolds.fasta"
+    --pe-1 <reads1> --pe-2 <reads2> \
+megahit \
+    -o <sample_name> # The directory to store resulting files
+    # The final assembly is denoted "final.contigs.fa"
+    -1 <reads1> -2 <reads2>
+```
 - 5. BUSCO, Quast: Assess assembly quality
-  - BUSCO was set to use the `sordariomycetes_odb10` lineage, while Quast was provided with the reference genome
-  - The Megahit assemblies produced more contiguous of contigs and had higher BUSCO completeness, so these were selected for downstream analysis.
+  - BUSCO was set to use the `sordariomycetes_odb10` lineage in `genome` mode, while Quast was provided with the reference genome
+      - BUSCO needs to be set in `offline` mode or else it will downloads its lineage database automatically in the directory of each run
+      - Quast can assess several assemblies at once for comparison purposes
+```bash
+# First manually download the sordariomycetes_odb10 lineage dataset
+busco --download sordariomycetes_odb10
+
+busco -i <assembly_fasta> \
+    -l sordariomycetes_odb10 \
+    -o <busco_output> # The busco output directory \
+    -m genome \
+    --download_path <path> # The path to the "busco_downloads" folder obtained above
+
+quast.py <assemblies> \ # The paths to all assemblies
+    --fungus \ # Specifies to analyze as a fungal genome
+    -r <reference> \ # path to reference genome fasta file
+    -g # path to reference genome gff file
+```
+  - The Megahit assemblies produced more contiguous sets of contigs and had higher BUSCO completeness, so these were selected for downstream analysis.
   - Transcriptome assembly was performed in much the same way as genome assembly, except mtDNA was not filtered, RNAspades was used as the assembler and finally BUSCO was set in `transcriptome` mode
 - 6. Ragout:  Assemble contigs into scaffolds*
   - Ragout was provided with the GCF_000961545.1 reference sequence to scaffold from, and run on default settings
-- 7. Minimap2: Align contigs to reference sequence
-- 8. Samtools: Separate contigs from sam file into separate fasta files for each chromosome
-    - *Scaffolding and separating contigs by chromosome was necessary to take advantage of nextflow's innate parallelization and reduce the time taken for genome annotation.
+      * The paths to files are given to Ragout with an `rcp` file, (an example can be found [here](./info/recipe.rcp)). A python script was used to automate writing this file from the command line
+```bash
+ragout recipe.rcp \
+-o <output_directory> # Name of the output directory; the final scaffolds will be found here under the name of "target" specified in the rcp file
+```
+- 7. Minimap2: Align scaffolds to reference sequence
+```bash
+minimap2 -a <reference> <scaffolds> > aligned.sam # Align the scaffolds
+```
+- 8. Samtools: Extract scaffolds from sam file into separate fasta files for each chromosome
+    - *Scaffolding and separating the results by chromosome was necessary to take advantage of nextflow's innate parallelization and reduce the time taken for genome annotation.
+```bash
+samtools sort aligned.sam -o aligned.bam # Sort, then index the aligned bam file
+samtools index aligned.bam # Necessary for using samtools view with a range specifier
+samtools view -h aligned.bam <chromosome> | samtools fasta > <chromosome>.fasta
+# "chromosome" specifies which chromosome is to be extracted, which requires adding the -h (header) flag
+# The pipe to "samtools fasta" extracts sequences aligned to that chromosome from the aligned.bam file in fasta format
+```
 - **Output:** genome assemblies for each sample, split into fasta files for each chromosome present in the reference sequence
 
 ## Genome annotation
@@ -56,6 +98,17 @@ bbduk.sh in1=<reads1> in2=<reads2> \
   - Repeat proteins provided with the Maker download
   - gff evidence from the GCF_000961545.1 reference
   - Protein evidence collected from UniProt Release 2023_02 with query `Sporothrix`
+```bash
+# Train Genemarks
+gmes_petap.pl -ES -sequence <scaffolds> -fungus
+
+# Predict repeat elements from reference fasta file
+BuildDatabase -name <species>_db <reference>
+RepeatModeler -database <species>_db -LTRStruct
+# The -LTRStruct flag runs the LTR structural discovery pipeline as well
+
+
+```
 - 1. Maker: First round of Maker annotation, using est, gff, protein, repeat evidence and Genemarks model
 - 2. Snap: Train snap on the output from the first round of annotation
 - 3. Maker: Second round of annotation, disabling all evidence-based annotation and using Snap and Augustus for gene prediction only. This was set up so Maker would  populate its annotations with the gff file from the first round

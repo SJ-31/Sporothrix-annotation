@@ -28,7 +28,7 @@ Channel.fromPath("$projectDir/data/reference/genomes/for_repeats/*")
 /*
  * Finishing channels
  */
-Channel.fromPath("$projectDir/results/assembly/$params.to_scaffold/*")
+Channel.fromPath("$projectDir/results/assembly/$params.to_scaffold")
     .map { it -> [ it.baseName.replaceAll(/_.*/, '').replaceAll(/.*-/, ''), it ]}
     .set { contigs_ch }
 Channel.fromPath("$projectDir/data/reference/genomes/scaffold_ref/*")
