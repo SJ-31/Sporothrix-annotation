@@ -95,7 +95,7 @@ workflow {
      */
     if ( params.call )
         variant_calling(vc_ref_ch, call_reads_ch)
-    if ( params.extracted_genes )
+    if ( params.extract_busco_genes )
     // Extract busco sequences from aligned BAM file and generate a multiple sequence
     //  alignment
         extract_buscos(params.vc_ref, params.vc_align, "$params.cleaned/*")

@@ -1,4 +1,5 @@
 process MEGAHIT {
+    tag "Assembling $run"
     conda '/home/sc31/Bio_SDD/miniconda3/envs/megahit'
 
     input:

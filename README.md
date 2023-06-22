@@ -1,16 +1,39 @@
 # Overview
-This repository contains the code used in the paper ... It consists of Nextflow workflows for genome and transcriptome assembly, then subsequent genome annotation with maker followed by variant calling with GATK. The maker and variant calling pipelines were adapted from code by Card et al. (2019) and Khalfan (2020) respectively. This file provides a brief overview of each of the workflow steps, the tools involved and the external data used (links included in the references)
+This repository contains the code used in the paper ... It consists of Nextflow workflows for genome and transcriptome assembly, then subsequent genome annotation with maker followed by variant calling with GATK. The maker and variant calling pipelines were adapted from code by Card et al. (2019) and Khalfan (2020) respectively. This file provides an overview of each of the workflow steps, their relevant shell commands, the tools involved and the external data used (links included in the references).
 
 ## Genome/transcriptome assembly
 - **Input:**
   - Raw paired-end fastq files
   - Reference genome for *Sporothrix schenckii*, GCF_000961545.1
-  - mtDNA reference,
+  - mtDNA reference
 - 1. FastQC, MultiQC: Evaluate raw paired-end fastq files
-- 2. FastP: Trim adapters and poly g (identified as a contaminant in prior step)
+    * FastQC provides information about read quality, overrepresented sequences, adapter content and other statistics on a per-fastq-file basis; MultiQC collates the information from multiple FastQC report files for convenience.
+```bash
+fastqc <reads1> <reads2>
+multiqc <directory_containing<reads>
+```
+- 2. FastP: Trim adapters and poly g (identified as a contaminant in prior step).
+    * FastP is an all-purpose quality control tool that can perform adapter removal, read trimming and base correction
+```bash
+fastp -i <reads1> -I <reads2> \
+    --detect_adapter_for_pe \ # Detect adapters in paired-end reads
+    -c \ # Enable overlap analysis for paired-end reads, which corrects mismatched bases if the overlap meets a certain length (default 30) and the mistmach exceeds a certain number of bases (default 5)
+    -Q \ # Disable phred-based quality filtering - the reads for all given samples were already high quality (> 25).
+    --trim_poly_g \ # Trim poly-g tails
+    -o <reads1_out> -O <reads2_out> # Specify names for the cleaned output reads
+```
 - 3. BBduk: Filter mtDNA
+  - A kmer-based quality control tool, BBduk was used here for the function of filtering out reads that match strongly to a set of query sequences (mtDNA in this case).
   - The kmer size setting for BBduk was set to the maximum of `k=31` to make filtering as stringent as possible
   - mTNDNA filtering was added when in a previous iteration of the workflow, some of the output contigs were found to align to *Sporothrix* mtDNA
+```bash
+bbduk.sh in1=<reads1> in2=<reads2> \
+    out1=<reads1_out> out2=<reads2_out> \
+    ref=<reference> \ # The reference sequences to filter out from, in fasta format
+    outm=<flagged> \ # Name for file containing flagged reads that got matched to ref
+    k=31 \
+    -Xmx1G -Xms16M \ # Allocate memory to prevent "out of memory" issues
+```
 - 4. Spades, Megahit: Assemble reads
   - Both ran in default settings
 - 5. BUSCO, Quast: Assess assembly quality
