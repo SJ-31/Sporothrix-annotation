@@ -1,18 +1,17 @@
 process CONS {
+    publishDir "$outdir", mode: 'copy'
+
     input:
     path(alignment)
     val(outdir)
     //
     output:
-    val("*cons.fasta")
+    path("*cons.fasta")
+
     //
-    shell:
-    '''
-    header=$(sed 's/>S[[:digit:]]\{2\}|/>cons|/g')
-    name=$(echo !{alignment} | sed 's/_.*//g')
-    cons -sequence !{alignment} \
-        -outseq ${name}_cons.fasta \
-        -name $header
-    '''
+    script:
+    """
+    emboss_cons.sh $alignment
+    """
     //
 }
