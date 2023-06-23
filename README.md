@@ -1,5 +1,6 @@
 # Overview
-This repository contains the code used in the paper ... It consists of Nextflow workflows for genome and transcriptome assembly, then subsequent genome annotation with maker followed by variant calling with GATK. The maker and variant calling pipelines were adapted from code by Card et al. (2019) and Khalfan (2020) respectively. This file provides an overview of each of the workflow steps, their relevant shell commands, the tools involved and the external data used (links included in the references).
+This repository contains the code used in the paper ... It consists of Nextflow workflows for genome and transcriptome assembly, then subsequent genome annotation with maker followed by variant calling with GATK. The maker and variant calling pipelines were adapted from code by Card et al. (2019) and Khalfan (2020) respectively. This file provides a brief overview of each workflow steps, their relevant shell commands, the tools involved and the external data used (links included in the references). A more detailed description the steps (e.g. why a certain tool or possible complications) can be found [here]()
+
 
 ## Genome/transcriptome assembly
 - **Input:**
