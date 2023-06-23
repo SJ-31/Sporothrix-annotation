@@ -1,0 +1,5 @@
+.target = B-S11 // The name of the assembly
+.references = S_schenckii_genome_F // Name for references
+
+B-S11.fasta = ./B-S11_megahit.fasta // Path to assembly
+S_schenckii_genome_F.fasta = ./S_schenckii_genome_F.fasta // Path to reference
