@@ -1,10 +1,12 @@
 #!/bin/env python
+import os
 import pandas as pd
 
-look_in = [f"S0{i}" for i in range(2, 10)] + ["S10", "S11"]
+# Run this in the directory containing the busco folders
+look_in = list(filter(lambda d: os.path.isdir(d), os.listdir(".")))
 gene_dict: dict = {}
 for directory in look_in:
-    path = f"{directory}_scaffolds_BUSCO/run_sordariomycetes_odb10/full_table.tsv"
+    path = f"{directory}/run_sordariomycetes_odb10/full_table.tsv"
     busco_table = pd.read_csv(path, sep="\t", skiprows=2)
     df = busco_table[busco_table['Status'] == 'Complete']
     gene_dict[directory] = set(df['# Busco id'])

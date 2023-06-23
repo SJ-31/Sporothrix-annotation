@@ -1,5 +1,5 @@
 # Overview
-This repository contains the code used in the paper ... It consists of Nextflow workflows for genome and transcriptome assembly, then subsequent genome annotation with maker followed by variant calling with GATK. The maker and variant calling pipelines were adapted from code by Card et al. (2019) and Khalfan (2020) respectively. This file provides a brief overview of each workflow steps, their relevant shell commands, the tools involved and the external data used (links included in the references). A more detailed description the steps (e.g. why a certain tool or possible complications) can be found [here]()
+This repository contains the code used in the paper ... It consists of Nextflow workflows for genome and transcriptome assembly, then subsequent genome annotation with maker followed by variant calling with GATK. The maker and variant calling pipelines were adapted from code by Card et al. (2019) and Khalfan (2020) respectively. This file provides a brief overview of each workflow steps, their relevant shell commands, the tools involved and the external data used (links included in the references). More on the rationale behind each steps (without the shell commands), such as why a certain tool was used, can be found [here](./info/README_Extended.md)
 
 
 ## Genome/transcriptome assembly
@@ -26,7 +26,6 @@ fastp -i <reads1> -I <reads2> \
 - 3. BBduk: Filter mtDNA
   - A kmer-based quality control tool, BBduk was used here for the function of filtering out reads that match strongly to a set of query sequences (mtDNA in this case).
   - The kmer size setting for BBduk was set to the maximum of `k=31` to make filtering as stringent as possible
-  - mTNDNA filtering was added when in a previous iteration of the workflow, some of the output contigs were found to align to *Sporothrix* mtDNA
 ```bash
 bbduk.sh in1=<reads1> in2=<reads2> \
     out1=<reads1_out> out2=<reads2_out> \
@@ -66,9 +65,8 @@ quast.py <assemblies> \ # The paths to all assemblies
     -r <reference> \ # path to reference genome fasta file
     -g # path to reference genome gff file
 ```
-  - The Megahit assemblies produced more contiguous sets of contigs and had higher BUSCO completeness, so these were selected for downstream analysis.
   - Transcriptome assembly was performed in much the same way as genome assembly, except mtDNA was not filtered, RNAspades was used as the assembler and finally BUSCO was set in `transcriptome` mode
-- 6. Ragout:  Assemble contigs into scaffolds*
+- 6. Ragout:  Assemble contigs into scaffolds
   - Ragout was provided with the GCF_000961545.1 reference sequence to scaffold from, and run on default settings
       * The paths to files are given to Ragout with an `rcp` file, (an example can be found [here](./info/recipe.rcp)). A python script was used to automate writing this file from the command line
 ```bash
@@ -80,7 +78,6 @@ ragout recipe.rcp \
 minimap2 -a <reference> <scaffolds> > aligned.sam # Align the scaffolds
 ```
 - 8. Samtools: Extract scaffolds from sam file into separate fasta files for each chromosome
-    - *Scaffolding and separating the results by chromosome was necessary to take advantage of nextflow's innate parallelization and reduce the time taken for genome annotation.
 ```bash
 samtools sort aligned.sam -o aligned.bam # Sort, then index the aligned bam file
 samtools index aligned.bam # Necessary for using samtools view with a range specifier
