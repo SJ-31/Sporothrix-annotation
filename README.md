@@ -1,6 +1,147 @@
 # Overview
 This repository contains the code used in the paper ... It consists of Nextflow workflows for genome and transcriptome assembly, then subsequent genome annotation with maker followed by variant calling with GATK. The maker and variant calling pipelines were adapted from code by Card et al. (2019) and Khalfan (2020) respectively. This file provides a brief overview of each workflow steps, their relevant shell commands, the tools involved and the external data used (links included in the references). More on the rationale behind each steps (without the shell commands), such as why a certain tool was used, can be found [here](./info/README_Extended.md)
 
+```mermaid
+---
+title: Sporothrix Annotation
+---
+flowchart LR
+  r1("Raw short reads (DNA)")
+  ref("`*S. schenckii* reference genome`")
+  refgff("`*S. shenckii* reference annotations`")
+  B["`**FASTQC**
+  Quality assessment`"]
+  C["`**FastP**
+  Quality control`"]
+  G["`**BUSCO**
+  Assess assembly quality`"]
+  subgraph Genome assembly
+  D["`**BBduK**
+  mtDNA filtering`"]
+  E["`**Spades**
+  Assembly`"]
+  F["`**Megahit**
+  Assembly`"]
+  G["`**BUSCO**
+  Assess quality`"]
+  H["`**Quast**
+  Assess quality`"]
+  1(Combine samples)
+  contigs([Final contigs: Megahit])
+
+  r1 --> B --> C --> D --> E & F --> G
+  E & F --> 1 --> H
+  ref & refgff --> H
+  G & H --> contigs
+  end
+
+  subgraph Transcriptome assembly
+  r3("Raw short reads (RNA)")
+  E1["`**RNASpades**
+  Assembly`"]
+  G1["`**BUSCO**
+  Assess assembly quality`"]
+  B1["`**FASTQC**
+  Quality assessment`"]
+  C1["`**FastP**
+  Quality control`"]
+  31([Transcriptome])
+  r3 --> B1 --> C1 --> E1 --> G1 --> 31
+  end
+
+  subgraph Finishing
+  ragout["`**Ragout**
+  Assemble scaffolds
+  `"]
+  minimap["`**Minimap2**
+  Align scaffolds to reference`"]
+  samtools["`**Samtools**
+  extract chromosomes by scaffold`"]
+  busco["`**BUSCO**
+  Assess quality`"]
+  busco_genes([BUSCO gene table])
+  full_scaffolds([Full scaffolds])
+  chr_scaffolds([Chromosome scaffolds])
+  contigs & ref --> ragout --> minimap
+  ragout --> busco --> busco_genes & full_scaffolds
+  ref --> minimap --> samtools --> chr_scaffolds
+  end
+
+  subgraph Genome annotation
+  aug["`**Augustus**
+  Train`"]
+  augm([Augustus species model])
+  gm["`**Genemarks**
+  Train`"]
+  gmhmm([Genemarks model])
+  otherref("`*Sporothrix sp.* reference genomes`")
+  rep["`**Repeat modeler**
+  Repeat annotation
+  `"]
+  replib([Repeat libraries])
+  prot("`*Sporothrix* protein`")
+  maker{"`**Maker**
+  Annotate genome`"}
+  snap["`**SNAP**
+  Train`"]
+  snapmodel([SNAP model])
+  round1([Round 1 annotations])
+  round2([Round 2 annotations])
+  round3([Final annotations])
+
+  ref --> aug --> augm
+  ref --> gm --> gmhmm
+  ref & otherref --> rep --> replib
+  refgff & chr_scaffolds --> maker
+  augm & gmhmm & replib & prot & 31 --> maker --> round1 --> snap --> snapmodel
+ snapmodel --> maker --> round2 --> snap
+ maker --> round3
+ end
+
+  subgraph Variant calling
+  bwamem["`**BWA-MEM**
+  Align to reference`"]
+  picard["`**Picard**
+  Mark duplicates & sort`"]
+  haplo{"`**GATK HaplotypeCaller**
+  Call variants`"}
+  select["`**GATK SelectVariants**
+  Filter SNPS & indels`"]
+  bqsr["`**GATK BQSR**
+  Base Quality Score Recalibration`"]
+  finalvcf([Final variants])
+  bcftools["`**bcftools**
+  Extract gene region`"]
+  genevar([Gene variants])
+
+  ref --> bwamem --> picard --> haplo --First round--> select --> bqsr --> haplo
+  haplo --Final round --> finalvcf --> bcftools --> genevar
+  end
+
+  subgraph BUSCO gene extraction
+  kallisto["`**KALLISTO**
+  Quantify transcripts`"]
+  mapping("BUSCO-to-gff mapping")
+  liftoff["`**Liftoff**
+  Lift over reference annotations`"]
+  liftover([Lifted annotations])
+  awk["`**awk**
+  Transfer annotations`"]
+  gffread["`**gffread**
+  Extract BUSCO genes`"]
+  concat["Concatenate genes across samples"]
+  mafft["`**MAFFT**
+  Multiple sequence alignment`"]
+  msa([Multiple sequence alignment])
+  quant([Transcripts quantified])
+
+  full_scaffolds & busco_genes --> mapping
+  full_scaffolds --> liftoff --> liftover
+  mapping & liftover --> awk --> gffread --> concat --> mafft --> msa
+  gffread --> kallisto --> quant
+  end
+```
+
 
 ## Genome/transcriptome assembly
 - **Input:**
