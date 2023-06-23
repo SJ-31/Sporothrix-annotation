@@ -106,16 +106,39 @@ gmes_petap.pl -ES -sequence <scaffolds> -fungus
 # Predict repeat elements from reference fasta file
 BuildDatabase -name <species>_db <reference>
 RepeatModeler -database <species>_db -LTRStruct
-# The -LTRStruct flag runs the LTR structural discovery pipeline as well
-
-
+# The -LTRStruct flag runs the LTR structural discovery pipeline in addition to the standard discovery setting
+# Concatenate the RepeatModeler output (the file called consensi.fa.classified) from each species into a single file to be used by maker
 ```
 - 1. Maker: First round of Maker annotation, using est, gff, protein, repeat evidence and Genemarks model
-- 2. Snap: Train snap on the output from the first round of annotation
+    * Example of options [here](./info/maker_opts.ctl_Round1), a comment with "##" marks where an option has been changed for this round
+```bash
+maker -CTL # Generate the maker control files in the current directory
+# Manually edit maker_opts.ctl following the example above, or use the script "maker_cli.py" found in the bin directory
+maker -fix_nucleotides # Run maker in the directory containing the control files. Need the "-fix_nucleotides" flag to be compatible with some of the evidence
+gff3_merge -d <maker_output_directory>/<round1>_master_datastore.log # Combine all the maker annotations from each scaffold into a single gff file
+```
+- 2. SNAP: Train SNAP on the output from the first round of annotation.
+```bash
+maker2zff <round1_gff> # This maker script converts the gff output into a zff file (<round1>.ann) and extracts the sequences in fasta format (<round1>.dna)
+fathom genome.ann genome.dna -gene-stats > ${name}_SNAP-gene-stats.log 2>&1 # Obtain gene log file for statistics
+fathom genome.ann genome.dna -validate > ${name}_SNAP-validate.log 2>&1 # Obtain log file for gene validations.
+fathom -categorize 100 <round1>.ann <round1>.dna # Categorize genes for training: genes with errors overlapping genes etc.
+#   The number after specifies how much intergenic sequence to place on either side of the gene
+fathom -export 100 -plus uni.* # Only the unique genes will get exported for training
+forge export.ann export.dna
+hmm-assembler.pl <round1> . > <round1>.snap_hmm # Build the snap model from the files in the directory
+```
 - 3. Maker: Second round of annotation, disabling all evidence-based annotation and using Snap and Augustus for gene prediction only. This was set up so Maker would  populate its annotations with the gff file from the first round
-- 4. Snap: Second round of Snap training, using the Maker's second round output
-- 5. Maker: Final round of annotation with the most recent Snap model
+    * Example of options [here](./info/maker_opts.ctl_Round2)
+- 4. Snap: Second round of SNAP training, using the Maker's second round output
+    * The commands are the same as used in training SNAP in the first round
+- 5. Maker: Final round of annotation with the most recent SNAP model
+    * The maker options are the same as in the second round, just with the updated SNAP model
 - 6. Maker, Seqkit: Extract Maker's final gff and fasta transcripts using the tools packaged with Maker, combine the each scaffolds' annotations into a single file and remove duplicates with Seqkit
+```bash
+fasta_merge -d <maker_output_directory>/<round3>_master_datastore.log
+seqkit rmdup round3.fasta > round3_deduplicated.fasta
+```
 - 7. BUSCO: Assess BUSCO completeness of final transcripts with BUSCO in `transcriptome` mode
 - **Output:** gff files containing annotations for each sample, with predicted transcripts and proteins in fasta format.
 
@@ -123,7 +146,7 @@ RepeatModeler -database <species>_db -LTRStruct
 - **Input:**
   - Cleaned reads (after trimming and filtering as in genome assembly)
   - Reference sequence GCF_000961545.1
-- The variant calling steps are identical to that of Khalfan (2020)'s [implementation](https://gencore.bio.nyu.edu/variant-calling-pipeline-gatk4/Khalfan), with covariate analysis disabled (due to an R bug) and updated from the DSL 1 (which is deprecated in the most recent version of Nextflow) to DSL 2
+- The variant calling steps are identical to that of Khalfan (2020)'s [implementation](https://gencore.bio.nyu.edu/variant-calling-pipeline-gatk4/Khalfan) (an explanation can be found in the link), with covariate analysis disabled (due to an R bug) and updated from the DSL 1 (which is deprecated in the most recent version of Nextflow) to DSL 2
   - The short reads were aligned to the reference sequence
 - **Output:** vcf files for each sample
 - Genes of interest were first identified by manually cross-referencing BUSCO output with the GCF_000961545.1 gff file
@@ -132,15 +155,18 @@ RepeatModeler -database <species>_db -LTRStruct
 
 ### BUSCO gene extraction
 - **Input**
-    - GCF_000961545 reference gff file
+    - GCF_000961545 reference gff and fasta file
     - BUSCO output tables for each assembly
     - Cleaned reads
 - **Output**
     * Multiple sequence alignments for all common single-copy BUSCO genes
     * KALLISTO tables describing the abundance of each single-copy gene
 - 1. A script (`busco_to_gff.sh`) was written to map every single-copy BUSCO gene to a gene described in the gff file, obtaining a more precise range in the process.
-    - The gene table was filtered to leave only the genes that were shared by every sample (~3200 genes). A list of these shared genes was created by processing the output tables  with a python script
+    - The gene table was filtered to leave only the genes that were shared by every sample (~3200 genes). A list of these shared genes was created by processing the output tables with a python script
 * 2. Liftoff: Lift over genome annotations from GCF_000961545 reference gff onto scaffolds
+```bash
+liftoff <scaffolds> <reference_fasta> -g <reference_gff> -o <scaffolds>_lifted.gff
+```
 * 3. awk: Use the BUSCO-gff mapping from step 1. to filter  the single-copy BUSCO genes from the lifted gffs, generating a tsv file with their new locations on the lifted gff*
     + *The original BUSCO output table describes the BUSCO gene locations specific for the GCF_000961545 reference. Their locations may be different with each assembly
 * 4. gffread: Extract the sequences of the BUSCO genes in fasta format using the coordinates specified from the previous file. Every gene is stored in a separate fasta file

@@ -15,10 +15,9 @@ process SNAP {
     sample = name.replaceAll(/_.*/, '')
     """
     maker2zff $gff
-    fathom -categorize 100 *.ann *.dna
     fathom genome.ann genome.dna -gene-stats > ${name}_SNAP-gene-stats.log 2>&1
     fathom genome.ann genome.dna -validate > ${name}_SNAP-validate.log 2>&1
-    fathom genome.ann genome.dna -categorize 100 > ${name}_SNAP-categorize.log 2>&1
+    fathom -categorize 100 *.ann *.dna
     fathom -export 100 -plus uni.*
     forge export.ann export.dna
     hmm-assembler.pl ${gff.baseName} . > ${gff.baseName}.snap_hmm

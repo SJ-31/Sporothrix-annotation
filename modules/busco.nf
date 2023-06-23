@@ -1,5 +1,5 @@
 process BUSCO {
-    publishDir "$outdir/${sample}", mode: 'copy'
+    publishDir "$outdir", mode: 'copy'
     conda '/home/sc31/Bio_SDD/miniconda3/envs/busco'
 
     input:
