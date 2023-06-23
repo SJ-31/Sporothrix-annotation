@@ -1,7 +1,7 @@
 #!/bin/env python
 import pandas as pd
 
-look_in = [f"S0{i}" for i in range(2, 10)] + ["S10"]
+look_in = [f"S0{i}" for i in range(2, 10)] + ["S10", "S11"]
 gene_dict: dict = {}
 for directory in look_in:
     path = f"{directory}_scaffolds_BUSCO/run_sordariomycetes_odb10/full_table.tsv"

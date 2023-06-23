@@ -151,6 +151,9 @@ seqkit rmdup round3.fasta > round3_deduplicated.fasta
 - **Output:** vcf files for each sample
 - Genes of interest were first identified by manually cross-referencing BUSCO output with the GCF_000961545.1 gff file
   - Their regions were extracted from the vcf file using Bcftools
+```bash
+bcftools view <contig_name>:<start>-<stop> <indexed_vcf>
+```
 - The `bin` directory contains python scripts for extracting single-copy BUSCO gene sequences from BUSCO output and combining them across samples
 
 ### BUSCO gene extraction
@@ -162,17 +165,23 @@ seqkit rmdup round3.fasta > round3_deduplicated.fasta
     * Multiple sequence alignments for all common single-copy BUSCO genes
     * KALLISTO tables describing the abundance of each single-copy gene
 - 1. A script (`busco_to_gff.sh`) was written to map every single-copy BUSCO gene to a gene described in the gff file, obtaining a more precise range in the process.
-    - The gene table was filtered to leave only the genes that were shared by every sample (~3200 genes). A list of these shared genes was created by processing the output tables with a python script
-* 2. Liftoff: Lift over genome annotations from GCF_000961545 reference gff onto scaffolds
+    - The gene table was filtered to leave only the genes that were shared by every sample (3186 genes). A list of these shared genes was created by processing the output tables with a python script
+* 2. Liftoff: Lift over genome annotations from GCF_000961545 reference gff onto scaffolds, generating a lifted gff file
 ```bash
 liftoff <scaffolds> <reference_fasta> -g <reference_gff> -o <scaffolds>_lifted.gff
 ```
-* 3. awk: Use the BUSCO-gff mapping from step 1. to filter  the single-copy BUSCO genes from the lifted gffs, generating a tsv file with their new locations on the lifted gff*
+* 3. awk: Use the BUSCO-gff mapping from step 1. to filter the single-copy BUSCO genes from the lifted gffs, generating a tsv file with their new locations on the lifted gff*
     + *The original BUSCO output table describes the BUSCO gene locations specific for the GCF_000961545 reference. Their locations may be different with each assembly
 * 4. gffread: Extract the sequences of the BUSCO genes in fasta format using the coordinates specified from the previous file. Every gene is stored in a separate fasta file
 * 5. MAFFT: Combine the fasta files of the same genes for each sample into a single file and perform a multiple sequence alignment using MAFFT
-* 6. kallisto: Combine the per-sample fasta files, generating a set of per-sample gene sequences. Pass and the cleaned reads for the sample as input to kallisto for transcript quantification
-
+```bash
+mafft --preservecase --auto <combined_gene_fastas> > aligned.fasta
+```
+* 6. kallisto: Combine the per-sample fasta files, generating a set of per-sample gene sequences. Pass the cleaned reads for the sample as input to kallisto for transcript quantification
+```bash
+kallisto index -i index  <sample_combined_fasta> # Create a kallisto index (the "-i" flag specifies the index filename)
+kallisto quant -i index -o <sample_quantified> <reads1> <reads2> # The "-o" flag specifies output directory name
+```
 
 # References
 - Assembly [Internet]. Bethesda (MD): National Library of Medicine (US), National Center for Biotechnology Information; [1988] – . Accession No. GCF_000961545.1, S_schenckii_v1reference; [cited 2023 Jun 23]. Available from: https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000961545.1/
