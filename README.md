@@ -56,7 +56,7 @@ busco --download sordariomycetes_odb10
 
 busco -i <assembly_fasta> \
     -l sordariomycetes_odb10 \
-    -o <busco_output> # The busco output directory \
+    -o <busco_output> \ # The busco output directory
     -m genome \
     --download_path <path> # The path to the "busco_downloads" folder obtained above
 

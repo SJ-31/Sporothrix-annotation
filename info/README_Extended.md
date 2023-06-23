@@ -53,7 +53,7 @@
     * The maker options are the same as in the second round, just with the updated SNAP model
 - 6. Maker, Seqkit: Extract Maker's final gff and fasta transcripts using the tools packaged with Maker, combine the each scaffolds' annotations into a single file and remove duplicates with Seqkit
 - 7. BUSCO: Assess BUSCO completeness of final transcripts with BUSCO in `transcriptome` mode
-- The two rounds additional of Maker are only for retraining SNAP to improve its predictions, given that the Genemarks and Augustus models do not change. This three round structure is the standard protocol to avoid overtraining the predictors and because additional rounds beyond this are usually redundant (Campbell et al., 2014).
+- The two rounds additional of Maker are only for retraining SNAP to improve its predictions, given that the Genemarks and Augustus models do not change. This three--round structure is the standard protocol to avoid overtraining the predictors and because additional rounds beyond this are usually redundant (Campbell et al., 2014).
 - **Output:** gff files containing annotations for each sample, with predicted transcripts and proteins in fasta format.
 
 ## Variant calling and identification
