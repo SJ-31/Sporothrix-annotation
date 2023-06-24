@@ -25,6 +25,7 @@ include { VCF_GET_REGION } from '../modules/region_from_vcf'
 include { BUSCO_FROM_BAM } from '../modules/busco_from_bam'
 include { LIFTOFF } from '../modules/liftoff'
 include { MUSCLE } from '../modules/muscle'
+include { NJ } from '../modules/nj'
 include { MAFFT } from '../modules/mafft'
 include { GFF_BUSCO_MAP } from '../modules/busco_gff_mapping'
 include { KALLISTO } from '../modules/kallisto'
@@ -107,6 +108,7 @@ workflow extract_buscos {
         .set { per_sample }
     MAFFT(combined_ch.all_samples, "$params.vc/4-busco_genes_MSA")
         .set { msa_ch }
+    NJ(msa_ch, )
     CONS(msa_ch, "$params.vc/5-consensus")
     KALLISTO(per_sample.join(reads_ch), "$params.vc/5-quantification")
 }

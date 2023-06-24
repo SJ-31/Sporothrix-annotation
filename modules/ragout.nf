@@ -7,13 +7,15 @@ process RAGOUT {
     val(outdir)
     //
     output:
-    path("${name}_rag")
+    path("${n_name}_rag")
+    exec:
+    n_name = name.replaceAll(/_.*/, '').replaceAll(/-.*/)
     //
     script:
     """
     chef_ragout.py $contigs $reference
     ragout recipe.rcp \
-    -o ${name}_rag
+    -o ${n_name}_rag
     """
     //
 }
@@ -29,7 +31,7 @@ process EXTRACT_RAGOUT {
     tuple val(name), path("*.fasta")
     //
     exec:
-    name = scaffolds.baseName.replaceAll(/_.*/, '')
+    name = scaffolds.baseName.replaceAll(/_.*/, '').replaceAll(/-.*/)
 
     script:
     """
