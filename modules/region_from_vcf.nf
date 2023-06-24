@@ -1,19 +1,20 @@
 process VCF_GET_REGION {
-    publishDir "$outdir", mode: 'copy'
+    publishDir "$outdir/$name", mode: 'copy', pattern: "${name}*.vcf"
+    publishDir "$outdir", mode: 'copy', pattern: "*num_vars.tsv"
 
     input:
     tuple val(name), path(vcf)
     val(outdir)
-    each name_regions
+    val(gene_locs)
     //
     output:
-    path("${name}_${feature}.vcf")
+    path("${name}_*.vcf"), emit: vars
+    path("*num_vars.tsv*"), emit: nums
     //
     script:
-    (feature, range) = name_regions.tokenize('|')
     """
     bcftools index $vcf
-    bcftools view -r ${range} $vcf > ${name}_${feature}.vcf
+    all_vars.sh $name $gene_locs $vcf
     """
     //
 }

@@ -60,7 +60,7 @@ workflow variant_calling {
         .set { round2 }
     MERGE_VARIANTS(round2.snps_ch, round2.indels_ch, params.vc)
         .set { merged }
-    VCF_GET_REGION(merged, "$params.vc/gene_vars", params.extracted_genes)
+    VCF_GET_REGION(merged, "$params.vc/gene_vars", params.gene_locs)
 
     // ANALYZECOVARIATES(bqsr_ch.analyze_covariates_in_ch)
     //     .set { analyzed_covariates_ch }
@@ -108,7 +108,7 @@ workflow extract_buscos {
         .set { per_sample }
     MAFFT(combined_ch.all_samples, "$params.vc/4-busco_genes_MSA")
         .set { msa_ch }
-    NJ(msa_ch, )
+    // NJ(msa_ch, )
     CONS(msa_ch, "$params.vc/5-consensus")
     KALLISTO(per_sample.join(reads_ch), "$params.vc/5-quantification")
 }

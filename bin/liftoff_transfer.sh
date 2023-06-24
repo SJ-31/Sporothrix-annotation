@@ -10,20 +10,19 @@ info="#BUSCO ID\tType\tSequence\tStart\tStop\tNCBI descriptor\tBUSCO descriptor"
 echo -e "$info" > "$output"
 
 function match {
-    awk -v geneID="$ID" '$9 ~ geneID {print}' "$liftover"
+    awk -v geneID="$ID" '$9 ~ geneID {print; exit}' "$liftover"
 }
 
-while IFS= read -r line
+while IFS=$'\t' read -r id type seq start stop ncbi_des busco_des
     do
-        fields=($(echo $line | awk '! /#/ {print $1,$2,$6,$7}'))
-        if [ -z "${fields[2]}" ]; then
+        if [ -z "$seq" ]; then
             continue
         fi
-        ID=$(echo "${fields[2]}" | sed 's/.*geneID/ID/')
-        corres=($(match))
-        ids="${fields[0]}\t${fields[1]}\t"
-        locs="${corres[0]}\t${corres[3]}\t${corres[4]}\t"
-        info="${fields[2]}\t${fields[3]}"
+        ID=$(echo "$ncbi_des" | sed 's/.*geneID/ID/')
+        IFS=$'\t' read -r contig _ _ l_start l_stop _ <<< "$(match)"
+        ids="$id\t$type\t"
+        locs="${contig}\t${l_start}\t${l_stop}\t"
+        info="${ncbi_des}\t${busco_des}"
         echo -e "${ids}${locs}${info}" >> "$output"
     done < "$busco_gff"
 
