@@ -4,6 +4,7 @@ sample=$1
 to_read=$2
 vcf=$3
 
+bcftools index -f "$vcf"
 counts="${sample}_num_vars.tsv"
 while IFS=$'\t' read -r name loc
 do

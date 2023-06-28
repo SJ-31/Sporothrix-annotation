@@ -61,12 +61,9 @@ workflow variant_calling {
     MERGE_VARIANTS(round2.snps_ch, round2.indels_ch, params.vc)
         .set { merged }
     VCF_GET_REGION(merged, "$params.vc/gene_vars", params.gene_locs)
-
+    SNPEFF(meged, "$parms.vc/snpeff")
     // ANALYZECOVARIATES(bqsr_ch.analyze_covariates_in_ch)
     //     .set { analyzed_covariates_ch }
-    SNPEFF(round2.snps_ch, params.vc)
-        .set { snpeff_out }
-
     /* Process qc creates a report for each sample.
     * Below we compile these into a single report.
     */
@@ -108,7 +105,7 @@ workflow extract_buscos {
         .set { per_sample }
     MAFFT(combined_ch.all_samples, "$params.vc/4-busco_genes_MSA")
         .set { msa_ch }
-    // NJ(msa_ch, )
+    NJ(msa_ch, params.reftree, "$params.vc/5-neighbor_joining")
     CONS(msa_ch, "$params.vc/5-consensus")
     KALLISTO(per_sample.join(reads_ch), "$params.vc/5-quantification")
 }

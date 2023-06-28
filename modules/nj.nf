@@ -1,5 +1,6 @@
 process NJ {
-    publishDir "$outdir", mode: 'copy', pattern: "*score.txt"
+    publishDir "$outdir/scores", mode: 'copy', pattern: "*score.txt"
+    publishDir "$outdir/trees", mode: 'copy', pattern: "*NJ.nwk"
 
     input:
     path(alignment)

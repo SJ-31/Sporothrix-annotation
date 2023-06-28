@@ -13,7 +13,6 @@ process VCF_GET_REGION {
     //
     script:
     """
-    bcftools index $vcf
     all_vars.sh $name $gene_locs $vcf
     """
     //

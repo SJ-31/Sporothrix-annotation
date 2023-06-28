@@ -16,7 +16,7 @@
   - Both ran in default settings
 - 5. BUSCO, Quast: Assess assembly quality
   - BUSCO was set to use the `sordariomycetes_odb10` lineage in `genome` mode, while Quast was provided with the reference genome
-      - BUSCO needs to be set in `offline` mode or else it will downloads its lineage database automatically in the directory of each run
+      - BUSCO needs to be set in `offline` mode or else it will download the given lineage database automatically in the directory of each run
       - Quast can assess several assemblies at once for comparison purposes
   - The Megahit assemblies produced more contiguous sets of contigs and had higher BUSCO completeness, so these were selected for downstream analysis.
   - Transcriptome assembly was performed in much the same way as genome assembly, except mtDNA was not filtered, RNAspades was used as the assembler and finally BUSCO was set in `transcriptome` mode
