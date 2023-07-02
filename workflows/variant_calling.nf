@@ -61,7 +61,7 @@ workflow variant_calling {
     MERGE_VARIANTS(round2.snps_ch, round2.indels_ch, params.vc)
         .set { merged }
     VCF_GET_REGION(merged, "$params.vc/gene_vars", params.gene_locs)
-    SNPEFF(meged, "$parms.vc/snpeff")
+    SNPEFF(merged, "$params.vc/snpeff")
     // ANALYZECOVARIATES(bqsr_ch.analyze_covariates_in_ch)
     //     .set { analyzed_covariates_ch }
     /* Process qc creates a report for each sample.

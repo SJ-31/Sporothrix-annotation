@@ -5,7 +5,7 @@ This repository contains the code used in the paper ... It consists of Nextflow 
 - **Input:**
   - Raw paired-end fastq files
   - Reference genome fasta and gff for *Sporothrix schenckii*, GCF_000961545.1
-  - mtDNA reference
+  - mtDNA reference 
 - 1. FastQC, MultiQC: Evaluate raw paired-end fastq files
     * FastQC provides information about read quality, overrepresented sequences, adapter content and other statistics on a per-fastq-file basis; MultiQC collates the information from multiple FastQC report files for convenience.
 ```bash
@@ -32,7 +32,7 @@ bbduk.sh in1=<reads1> in2=<reads2> \
     outm=<flagged> \ # Name for file containing flagged reads that got matched to ref
     k=31 \
     -Xmx1G -Xms16M \ # Allocate memory to prevent "out of memory" issues
-```
+    ```
 - 4. Spades, Megahit: Assemble reads
   - Both ran in default settings
 ```bash
@@ -143,14 +143,16 @@ seqkit rmdup round3.fasta > round3_deduplicated.fasta
   - Cleaned reads (after trimming and filtering as in genome assembly)
   - Reference sequence GCF_000961545.1
 - The variant calling steps are identical to that of Khalfan (2020)'s [implementation](https://gencore.bio.nyu.edu/variant-calling-pipeline-gatk4/Khalfan) (an explanation can be found in the link), with covariate analysis disabled (due to an R bug) and updated from the DSL 1 (which is deprecated in the most recent version of Nextflow) to DSL 2
-  - The short reads were aligned to the reference sequence
+  - The short reads were aligned to the reference 
 - **Output:** vcf files for each sample
 - Genes of interest were first identified by manually cross-referencing BUSCO output with the GCF_000961545.1 gff file
-  - Their regions were extracted from the vcf file using Bcftools
+  - A script that automates the process using bcftools, when given a plain-text file of gene locations is included in the `bin` diretory. 
+    - It also counts the number of variants present within each range.
 ```bash
 bcftools view <contig_name>:<start>-<stop> <indexed_vcf>
 ```
-- The `bin` directory contains python scripts for extracting single-copy BUSCO gene sequences from BUSCO output and combining them across samples
+- The `bin` directory contains python scripts for extracting single-copy BUSCO gene sequences from BUSCO output and combining them across samples. 
+- **Note:** If you intend to predict variant effects with SnpEff, the chromosome headers need to be identical to the ones provided used by the SnpeFf database file. There is a wrapper script for automatically converting the headers in the VCF file to be compatible with the tool.
 
 ### BUSCO gene extraction
 - **Input**
@@ -178,6 +180,8 @@ mafft --preservecase --auto <combined_gene_fastas> > aligned.fasta
 kallisto index -i index  <sample_combined_fasta> # Create a kallisto index (the "-i" flag specifies the index filename)
 kallisto quant -i index -o <sample_quantified> <reads1> <reads2> # The "-o" flag specifies output directory name
 ```
+* 7. R: Using the per-gene multiple sequence alignments from step 5, construct a phylogenetic tree with the neighbor joining method in R, then calculate the Generalized Robinson Foulds distance between the gene's tree and a reference tree
+
 
 # References
 - Assembly [Internet]. Bethesda (MD): National Library of Medicine (US), National Center for Biotechnology Information; [1988] – . Accession No. GCF_000961545.1, S_schenckii_v1reference; [cited 2023 Jun 23]. Available from: https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000961545.1/

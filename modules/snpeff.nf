@@ -2,12 +2,11 @@ process SNPEFF {
     publishDir "${outdir}/$pair_id", mode:'copy'
 
     input:
-    tuple (val(pair_id), path(merged_variants),
-    path(filtered_snps_index))
+    tuple (val(pair_id), path(merged_variants))
     val(outdir)
 
     output:
-    path("${pair_id}_snpeEff*")
+    path("${pair_id}_snpEff*")
     path("${pair_id}_annotated_vars.vcf")
 
     script:

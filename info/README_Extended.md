@@ -67,6 +67,7 @@
   - Their regions were extracted from the vcf file using Bcftools
   - This was necessary because the BUSCO gene ranges specified in the output table are far larger than the actual sequence of the gene they contain.
 - The `bin` directory contains python scripts for extracting single-copy BUSCO gene sequences from BUSCO output and combining them across samples
+- **Note:** If you intend to predict variant effects with SnpEff, the chromosome headers need to be identical to the ones provided used by the SnpeFf database file. There is a wrapper script for automatically converting the headers in the VCF file to be compatible with the tool.
 
 ### BUSCO gene extraction
 - **Input**
@@ -86,6 +87,8 @@
 * 5. MAFFT: Combine the fasta files of the same genes for each sample into a single file and perform a multiple sequence alignment using MAFFT
     + MAFFT was chosen for multiple sequence alignment because of its speed and low memory use (~3200 genes were being aligned in parallel). An earlier version of this step used MUSCLE but I quickly ran into memory issues on my laptop and could not get the process to complete.
 * 6. kallisto: Combine the per-sample fasta files, generating a set of per-sample gene sequences. Pass the cleaned reads for the sample as input to kallisto for transcript quantification
+* 7. R: Using the per-gene multiple sequence alignments from step 5, construct a phylogenetic tree with the neighbor joining method in R, then calculate the Generalized Robinson Foulds distance between the gene's tree and a reference tree
+- This step was implemented to identify which gene(s) was responsible for producing the variation that led to the observed reference tree, which was constructed after a run-through of this pipeline using all multiple sequence alignments from step 5.
 
 # References
 - Assembly [Internet]. Bethesda (MD): National Library of Medicine (US), National Center for Biotechnology Information; [1988] – . Accession No. GCF_000961545.1, S_schenckii_v1reference; [cited 2023 Jun 23]. Available from: https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000961545.1/
