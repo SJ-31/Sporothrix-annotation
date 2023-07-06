@@ -13,7 +13,6 @@ include { clean_reads } from './workflows/clean_reads'
 /*
  * Raw files for assembly, if you don't split up the dataset, will run out of memory
  */
-
 raw_ch = Channel.fromFilePairs("$params.raw/S*_R{1,2}_001.fastq.gz")
 rna_ch = Channel.fromFilePairs("$params.rna/*_{1,2}.fastq")
 clean_ch = Channel.fromFilePairs("$params.clean/B-S*_R{1,2}_001.fastq.gz")

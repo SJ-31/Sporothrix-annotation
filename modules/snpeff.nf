@@ -8,6 +8,7 @@ process SNPEFF {
     output:
     path("${pair_id}_snpEff*")
     path("${pair_id}_annotated_vars.vcf")
+    path("*warnings.txt")
 
     script:
     """
@@ -17,5 +18,6 @@ process SNPEFF {
     $pair_id
     mv snpEff_genes.txt ${pair_id}_snpEff_genes.txt
     mv snpEff_summary.html ${pair_id}_snpEff_summary.html
+    count_warnings.sh ${pair_id}_annotated_vars.vcf
     """
 }
