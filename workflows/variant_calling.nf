@@ -43,32 +43,37 @@ workflow variant_calling {
         .set { ref_ch }
     ADD_RG(ALIGN(cleaned_pairs_ch, ref_ch), params.readgroups)
         .set { aligned_reads_ch }
-    MARKDUPLICATESSPARK(aligned_reads_ch, params.vc)
-        .set { mds } //
-    GETMETRICS(mds.sorted_bam, ref_ch, params.vc)
-        .set { metrics_qc_ch }
+    if ( params.caller = "GATK") {
+        MARKDUPLICATESSPARK(aligned_reads_ch, params.vc)
+            .set { mds } //
+        GETMETRICS(mds.sorted_bam, ref_ch, params.vc)
+            .set { metrics_qc_ch }
 
-    // First round
-    call_variants_R1(mds.sorted_bam, ref_ch, 'first')
-        .set { round1 }
-    BQSR(mds.sorted_bam.join(round1.filtered_variants_ch), ref_ch)
-        .set { bqsr_ch }
-    bqsr_ch.recalibrated_bams.view()
+        // First round
+        call_variants_R1(mds.sorted_bam, ref_ch, 'first')
+            .set { round1 }
+        BQSR(mds.sorted_bam.join(round1.filtered_variants_ch), ref_ch)
+            .set { bqsr_ch }
 
-    // Final round, after recalibration
-    call_variants_R2(bqsr_ch.recalibrated_bams, ref_ch, 'final')
-        .set { round2 }
-    MERGE_VARIANTS(round2.snps_ch, round2.indels_ch, params.vc)
-        .set { merged }
-    VCF_GET_REGION(merged, "$params.vc/gene_vars", params.gene_locs)
+        // Final round, after recalibration
+        call_variants_R2(bqsr_ch.recalibrated_bams, ref_ch, 'final')
+            .set { round2 }
+        MERGE_VARIANTS(round2.snps_ch, round2.indels_ch, params.vc)
+            .set { merged }
+        VCF_GET_REGION(merged, "$params.vc/gene_vars", params.gene_locs)
+        QC(mds.dedup_qc_ch.join (metrics_qc_ch).join (round1.snps_ch)
+        .join (round2.snps_ch),
+           params.vc)
+    } else if ( params.caller = "freeBayes" ) {
+        FREEBAYES(aligned_reads_ch, ref_path, params.vc)
+            .set { merged }
+    }
     SNPEFF(merged, "$params.vc/snpeff")
     // ANALYZECOVARIATES(bqsr_ch.analyze_covariates_in_ch)
     //     .set { analyzed_covariates_ch }
     /* Process qc creates a report for each sample.
     * Below we compile these into a single report.
     */
-    QC(mds.dedup_qc_ch.join(metrics_qc_ch).join(round1.snps_ch)
-    .join(round2.snps_ch), params.vc)
 }
 
 workflow extract_buscos {

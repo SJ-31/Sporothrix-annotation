@@ -67,7 +67,40 @@
   - Their regions were extracted from the vcf file using Bcftools
   - This was necessary because the BUSCO gene ranges specified in the output table are far larger than the actual sequence of the gene they contain.
 - The `bin` directory contains python scripts for extracting single-copy BUSCO gene sequences from BUSCO output and combining them across samples
-- **Note:** If you intend to predict variant effects with SnpEff, the chromosome headers need to be identical to the ones provided used by the SnpeFf database file. There is a wrapper script for automatically converting the headers in the VCF file to be compatible with the tool.
+
+#### Building snpEff database
+- Although using the downloadable databases is recommended snpEff does provide a way for users to construct their own database
+- **Reasoning**
+  - The GCF_000961545 reference downloadable from snpEff uses different chromosome headers (e.g. `Cont39`, `Cont41`) to that of the NCBI (e.g. `NW_015971139.1)`. 
+    - Since the vcf file was generated using the latter convention, attempting to run snpEff without formatting the headers first will not work
+      - Even after doing this however, I still received ~70% `CHROMOSOME_NOT_FOUND` errors 
+      - From looking at the snpEff data directory, I suspect that not all chromosomes are present, or perhaps the same name refers to different chromosomes). 
+      - After rerunning snpEff with the custom-build database, all the errors disappeared
+  - **Note:** The last time this was updated was July 7 2023, so this might not be necessary if snpEff has updated their database
+- **Steps***
+  - Download the GenBank file for the the GCF_000961545 reference
+    - The easiest way to do this is with the NCBI's `datasets` CLI tool (downloading directly from the webpage would always give me a corrupted zip file)
+```bash
+datasets download genome accession GCF_000961545.1 --include gbff
+```
+  - Update the snpEff config file, located in the snpEff installation directory with the new genome
+```config
+#---
+# Databases are stored here
+# E.g.: Information for 'hg19' is stored in data.dir/hg19/
+# Custom GCF_000961545 
+customGCF000961545.genome : Sporothrix schenckii # The format is <custom_genome_name>.genome : <species>
+#
+# You can use tilde ('~') as first character to refer to your home directory. 
+# Also, a non-absolute path will be relative to config's file dir
+# 
+#---
+data.dir = ./data/ # This is where you specify the data directory, in the snpEff installation diretory by default
+```
+ - Make a directory in the snpEff data directory with the name used for the custom genome in the config, e.g. `mkdir customGCF000961545` in my example
+ - Rename the genome gbff to `genes.gbk`
+ - Run `java -jar <snpEff jar> build -genbank -v <custom_genome_name>`
+ - You can now use the custom genome with snpEff by using `<custom_genome_name>` in any commands
 
 ### BUSCO gene extraction
 - **Input**
