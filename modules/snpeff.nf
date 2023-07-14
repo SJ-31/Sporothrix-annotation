@@ -6,9 +6,9 @@ process SNPEFF {
     val(outdir)
 
     output:
-    path("${pair_id}_snpEff*")
-    path("${pair_id}_annotated_vars.vcf")
-    path("*warnings.txt")
+    path("${pair_id}_snpEff*"), emit: info
+    tuple val(pair_id), path("${pair_id}_annotated_vars.vcf"), emit: vcf
+    path("*warnings.txt"), emit: warnings
 
     script:
     """

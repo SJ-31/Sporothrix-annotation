@@ -68,7 +68,10 @@ workflow variant_calling {
         FREEBAYES(aligned_reads_ch, ref_path, params.vc)
             .set { merged }
     }
-    SNPEFF(merged, "$params.vc/snpeff")
+    SNPEFF(merged, "$params.vc/1-snpeff")
+        .set { snpeff_ch }
+    SNPSIFT(snpeff_ch.vcf, "$params.vc/2-snpsift")
+
     // ANALYZECOVARIATES(bqsr_ch.analyze_covariates_in_ch)
     //     .set { analyzed_covariates_ch }
     /* Process qc creates a report for each sample.
