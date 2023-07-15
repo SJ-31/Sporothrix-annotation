@@ -6,7 +6,7 @@ process SNPSIFT {
     val(outdir)
     //
     output:
-    tuple (val(pair_id), path("${pair_id}_filtered.vcf"))
+    tuple (val(pair_id), path("${pair_id}_filtered_annotated.vcf"))
     //
     script:
     """

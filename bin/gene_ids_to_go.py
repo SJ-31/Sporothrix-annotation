@@ -8,6 +8,8 @@ from urllib.parse import urlparse, parse_qs, urlencode
 import requests
 from requests.adapters import HTTPAdapter, Retry
 
+# Use UniProt's mapping API to obtain GO, KEGG and UniProt ids for
+#   a list of sequences with names based on the NCBI "Gene" database
 
 POLLING_INTERVAL = 3
 API_URL = "https://rest.uniprot.org"
@@ -171,8 +173,11 @@ def from_db(name, database_list) -> str:
 
 if len(sys.argv) > 2:
     raise SystemExit(2)
+
 with open(sys.argv[1], "r") as g:
     gene_ids = g.readlines()
+# The file with the gene ids should have the id separated by newlines, nothing
+# else
 
 job_id = submit_id_mapping(
     from_db="Gene_Name", to_db="UniProtKB",
