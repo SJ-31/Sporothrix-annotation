@@ -154,6 +154,7 @@ bcftools view <contig_name>:<start>-<stop> <indexed_vcf>
 - The `bin` directory contains python scripts for extracting single-copy BUSCO gene sequences from BUSCO output and combining them across samples.
 - **Note:** If you intend to predict variant effects with SnpEff and have used the GCF_000961545 reference for variant calling, downloading SnpEff's database of the reference GCF_000961545 won't work. Clarification and further instruction in the [extended](./info/README_Extended.md)
 
+
 ### BUSCO gene extraction
 - **Input**
     - GCF_000961545 reference gff and fasta file
@@ -182,8 +183,14 @@ kallisto quant -i index -o <sample_quantified> <reads1> <reads2> # The "-o" flag
 ```
 * 7. R: Using the per-gene multiple sequence alignments from step 5, construct a phylogenetic tree with the neighbor joining method in R, then calculate the Generalized Robinson Foulds distance between the gene's tree and a reference tree
 
+## GO Annotation and enrichment analysis
+* **Input**
+  + SnpEff-annotated vcf files
+  * 
+
 
 # References
+* Ashburner et al. Gene ontology: tool for the unification of biology. Nat Genet. 2000 May;25(1):25-9. DOI: 10.1038/75556 [abstract | full text]
 - Assembly [Internet]. Bethesda (MD): National Library of Medicine (US), National Center for Biotechnology Information; [1988] – . Accession No. GCF_000961545.1, S_schenckii_v1reference; [cited 2023 Jun 23]. Available from: https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000961545.1/
 - Assembly [Internet]. Bethesda (MD): National Library of Medicine (US), National Center for Biotechnology Information; [1988] – . Accession No. GCF_000820605.1 S_brasiliensis_5110_v1; [cited 2023 Jun 23]. Available from: https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000820605.1/
 - Assembly [Internet]. Bethesda (MD): National Library of Medicine (US), National Center for Biotechnology Information; [1988] – . Accession No. GCA_016097105.2, SVAR_v1.1; [cited 2023 Jun 23]. Available from: https://www.ncbi.nlm.nih.gov/assembly/GCA_016097105.2/
@@ -215,12 +222,14 @@ kallisto quant -i index -o <sample_quantified> <reads1> <reads2> # The "-o" flag
 - Lomsadze, A., Ter-Hovhannisyan, V., Chernoff, Y. O., & Borodovsky, M. (2005). Gene identification in novel eukaryotic genomes by self-training algorithm. Nucleic Acids Research, 33(20), 6494–6506. https://doi.org/10.1093/nar/gki937
 - McKenna, A., Hanna, M., Banks, E., Sivachenko, A., Cibulskis, K., Kernytsky, A., Garimella, K., Altshuler, D., Gabriel, S., Daly, M., & DePristo, M. A. (2010). The Genome Analysis Toolkit: A MapReduce framework for analyzing next-generation DNA sequencing data. Genome Research, 20(9), 1297–1303. https://doi.org/10.1101/gr.107524.110
 - Prjibelski, A., Antipov, D., Meleshko, D., Lapidus, A., & Korobeynikov, A. (2020). Using SPAdes De Novo Assembler. Current Protocols in Bioinformatics, 70(1), e102. https://doi.org/10.1002/cpbi.102
+* Sebastian Bauer and others, Ontologizer 2.0—a multifunctional tool for GO term enrichment analysis and data exploration, Bioinformatics, Volume 24, Issue 14, July 2008, Pages 1650–1651, https://doi.org/10.1093/bioinformatics/btn250
 - Seppey, M., Manni, M., & Zdobnov, E. M. (2019). BUSCO: Assessing Genome Assembly and Annotation Completeness. Methods in Molecular Biology (Clifton, N.J.), 1962, 227–245. https://doi.org/10.1007/978-1-4939-9173-0_14
 - Shen, W., Le, S., Li, Y., & Hu, F. (2016). SeqKit: A Cross-Platform and Ultrafast Toolkit for FASTA/Q File Manipulation. PLOS ONE, 11(10), e0163962. https://doi.org/10.1371/journal.pone.0163962
 - Smith, M.R. (2020a). Information theoretic Generalized Robinson-Foulds metrics for comparing phylogenetic trees. Bioinformatics 36: 5007–5013. doi: 10.1093/bioinformatics/btaa614
 - SRA [Internet]. Bethesda (MD): National Library of Medicine (US), National Center for Biotechnology Information; [1988] – . Accession No. SRX6367452; GSM3905740: Sample 1: hyphal form of S. schenckii; Sporothrix schenckii; RNA-Seq ;[cited 2023 Jun 23]. Available from: https://www.ncbi.nlm.nih.gov/sra/SRX6367452
 - Stanke, M., & Morgenstern, B. (2005). AUGUSTUS: A web server for gene prediction in eukaryotes that allows user-defined constraints. Nucleic Acids Research, 33(suppl_2), W465–W467. https://doi.org/10.1093/nar/gki458
 - Ter-Hovhannisyan, V., Lomsadze, A., Chernoff, Y. O., & Borodovsky, M. (2008). Gene prediction in novel fungal genomes using an ab initio algorithm with unsupervised training. Genome Research, 18(12), 1979–1990. https://doi.org/10.1101/gr.081612.108
+* The Gene Ontology Consortium. The Gene Ontology knowledgebase in 2023. Genetics. 2023 May 4;224(1):iyad031. DOI: 10.1093/genetics/iyad031 [abstract | full text]
 - The UniProt Consortium. (2023). UniProt: The Universal Protein Knowledgebase in 2023. Nucleic Acids Research, 51(D1), D523–D531. https://doi.org/10.1093/nar/gkac1052
 - Wingett, S. W., & Andrews, S. (2018). FastQ Screen: A tool for multi-genome mapping and quality control. F1000Research, 7, 1338. https://doi.org/10.12688/f1000research.15931.2
 - Yandell, M., & Ence, D. (2012). A beginner’s guide to eukaryotic genome annotation. Nature Reviews Genetics, 13(5), 329–342. https://doi.org/10.1038/nrg3174

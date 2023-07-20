@@ -1,4 +1,4 @@
-#GeneName 1
+GeneName 1
 GeneId 2
 TranscriptId 3
 BioType 4

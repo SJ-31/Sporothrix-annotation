@@ -1,7 +1,6 @@
 /*
  * Workflow imports
  */
-
 include { assembly } from './workflows/assembly'
 include { train_genemarks; annotation; get_buscos } from './workflows/annotation'
 include { repeats } from './workflows/repeatlibrary'
@@ -9,7 +8,6 @@ include { variant_calling; extract_buscos } from './workflows/variant_calling'
 include { rnaseq } from './workflows/rnaseq'
 include { scaffold; assess_scaffolds } from './workflows/finishing'
 include { clean_reads } from './workflows/clean_reads.nf'
-
 /*
  * Raw files for assembly, if you don't split up the dataset, will run out of memory
  */

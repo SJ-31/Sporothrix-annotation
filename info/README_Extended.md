@@ -123,6 +123,10 @@ data.dir = ./data/ # This is where you specify the data directory, in the snpEff
 * 7. R: Using the per-gene multiple sequence alignments from step 5, construct a phylogenetic tree with the neighbor joining method in R, then calculate the Generalized Robinson Foulds distance between the gene's tree and a reference tree
 - This step was implemented to identify which gene(s) was responsible for producing the variation that led to the observed reference tree, which was constructed after a run-through of this pipeline using all multiple sequence alignments from step 5.
 
+## GO Annotation and enrichment analysis
+The enrichment analysis here is to determine if any GO terms are associated with genes found to have significant variants
+Narrowing down the gene universe for enrichment analysis was necessary
+
 # References
 - Assembly [Internet]. Bethesda (MD): National Library of Medicine (US), National Center for Biotechnology Information; [1988] – . Accession No. GCF_000961545.1, S_schenckii_v1reference; [cited 2023 Jun 23]. Available from: https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000961545.1/
 - Assembly [Internet]. Bethesda (MD): National Library of Medicine (US), National Center for Biotechnology Information; [1988] – . Accession No. GCF_000820605.1 S_brasiliensis_5110_v1; [cited 2023 Jun 23]. Available from: https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000820605.1/

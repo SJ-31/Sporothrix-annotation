@@ -32,6 +32,9 @@ include { KALLISTO } from '../modules/kallisto'
 include { BUSCO_FROM_GFF } from '../modules/busco_from_gff'
 include { call_variants as call_variants_R1 } from './call_round'
 include { call_variants as call_variants_R2 } from './call_round'
+include { ONTOLOGIZER } from '../modules/go_enrichment.nf'
+include { SNPSIFT } from '../modules/snpsift.nf'
+
 
 workflow variant_calling {
     take:
@@ -71,6 +74,7 @@ workflow variant_calling {
     SNPEFF(merged, "$params.vc/1-snpeff")
         .set { snpeff_ch }
     SNPSIFT(snpeff_ch.vcf, "$params.vc/2-snpsift")
+    ONTOLOGIZER(snpeff_ch.info, "$params.vc/3-GO_enrichment")
 
     // ANALYZECOVARIATES(bqsr_ch.analyze_covariates_in_ch)
     //     .set { analyzed_covariates_ch }

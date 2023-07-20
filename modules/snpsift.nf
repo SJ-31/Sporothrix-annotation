@@ -6,11 +6,12 @@ process SNPSIFT {
     val(outdir)
     //
     output:
-    tuple (val(pair_id), path("${pair_id}_filtered_annotated.vcf"))
+    tuple (val(pair_id), path("${pair_id}_filtered_GO.vcf"))
     //
     script:
     """
     snpsift_wrapper.sh $pair_id $annotations $params.snpsift_jar
+    Rscript ${pair_id}_annotated_vars.vcf $params.go_annotations_ref
     """
     //
 }
