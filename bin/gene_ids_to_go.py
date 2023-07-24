@@ -9,7 +9,8 @@ import requests
 from requests.adapters import HTTPAdapter, Retry
 
 # Use UniProt's mapping API to obtain GO, KEGG and UniProt ids for
-#   a list of sequences with names based on the NCBI "Gene" database
+#   a genes in the NCBI's gene database
+#   Input: a text file of gene ids where each id is separated by a newline
 
 POLLING_INTERVAL = 3
 API_URL = "https://rest.uniprot.org"

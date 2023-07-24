@@ -10,7 +10,7 @@
 - 3. BBduk: Filter mtDNA
   - A kmer-based quality control tool, BBduk was used here for the function of filtering out reads that match strongly to a set of query sequences (mtDNA in this case).
   - The kmer size setting for BBduk was set to the maximum of `k=31` to make filtering as stringent as possible
-  - mTNDNA filtering was added when in a previous iteration of the workflow, some of the output contigs were found to align to *Sporothrix* mtDNA. Initially, filtering was carried out post-assembly by using Minimap2 alignments to remove sequences that had mapped to the mtDNA. This broke up the contigs though, as they had mistakenly incorporated the mtDNA sequences into the assembly of valid chromosomes.
+  - mtDNA filtering was added when in a previous iteration of the workflow, some of the output contigs were found to align to *Sporothrix* mtDNA. Initially, filtering was carried out post-assembly by using Minimap2 alignments to remove sequences that had mapped to the mtDNA. This broke up the contigs though, as they had mistakenly incorporated the mtDNA sequences into the assembly of valid chromosomes.
     * BBduk's filtering efficiency was validated by aligning the mtDNA with the filtered assembly with Minimap2 as before, and obtaining no alignments, indicating that all mtDNA sequences had been removed
 - 4. Spades, Megahit: Assemble reads
   - Both ran in default settings
@@ -23,8 +23,8 @@
 - 6. Ragout:  Assemble contigs into scaffolds*
   - Ragout was provided with the GCF_000961545.1 reference sequence to scaffold from, and run on default settings
       * The paths to files are given to Ragout with an `rcp` file, (an example can be found [here](./info/recipe.rcp)). A python script was used to automate writing this file from the command line
-  - Several scaffolding tools - ntJoin, sspace, CAP3, RagTag and Ragout - were tested on the highly fragmented sample 2 megahit contigs (7,639 sequences) before implementing for this step. Regardless of the flags used, Sspace and ntJoin showed no reduction in contig number; CAP3 reduced it by ~ 600 contigs. The reference-based RagTag showed promise, reducing down to  529 sequences. However, Ragout had the best performance (at the cost of speed), generating 13 scaffolds and was chosen.
-      * Suprisingly, the addition of more reference genomes to Ragtag did not benefit the scaffolding and often increased the number of unplaced contigs
+  - Several scaffolding tools - ntJoin, sspace, CAP3, RagTag and Ragout - were tested on the highly fragmented sample 2 Megahit contigs (7,639 sequences) before implementing for this step. Regardless of the flags used, Sspace and ntJoin showed no reduction in contig number; CAP3 reduced it by ~ 600 contigs. The reference-based RagTag showed promise, reducing down to  529 sequences. However, Ragout had the best performance (at the cost of speed), generating 13 scaffolds and was chosen.
+      * Surprisingly, the addition of more reference genomes to Ragtag did not benefit the scaffolding and often increased the number of unplaced contigs
       * Different Ragout flags (`--refine`, `--solid-scaffolds` and `--repeats`), adding phylogenetic information (in the form of a Newick tree for the samples) and changing the synteny block program made no difference either.
 - 7. Minimap2: Align scaffolds to reference sequence
 - 8. Samtools: Extract scaffolds from sam file into separate fasta files for each chromosome
@@ -62,28 +62,28 @@
   - Reference sequence GCF_000961545.1
 - The variant calling steps are identical to that of Khalfan (2020)'s [implementation](https://gencore.bio.nyu.edu/variant-calling-pipeline-gatk4/Khalfan) (an explanation can be found in the link), with covariate analysis disabled (due to an R bug) and updated from the DSL 1 (which is deprecated in the most recent version of Nextflow) to DSL 2
   - The short reads were aligned to the reference sequence
-- **Output:** vcf files for each sample
+- **Output:** VCF files for each sample
 - Genes of interest were first identified by manually cross-referencing BUSCO output with the GCF_000961545.1 gff file
-  - Their regions were extracted from the vcf file using Bcftools
+  - Their regions were extracted from the VCF file using Bcftools
   - This was necessary because the BUSCO gene ranges specified in the output table are far larger than the actual sequence of the gene they contain.
 - The `bin` directory contains python scripts for extracting single-copy BUSCO gene sequences from BUSCO output and combining them across samples
 
-#### Building snpEff database
-- Although using the downloadable databases is recommended snpEff does provide a way for users to construct their own database
+#### Building SnpEff database
+- Although using the downloadable databases is recommended SnpEff does provide a way for users to construct their own database
 - **Reasoning**
-  - The GCF_000961545 reference downloadable from snpEff uses different chromosome headers (e.g. `Cont39`, `Cont41`) to that of the NCBI (e.g. `NW_015971139.1)`. 
-    - Since the vcf file was generated using the latter convention, attempting to run snpEff without formatting the headers first will not work
+  - The GCF_000961545 reference downloadable from SnpEff uses different chromosome headers (e.g. `Cont39`, `Cont41`) to that of the NCBI (e.g. `NW_015971139.1)`. 
+    - Since the VCF file was generated using the latter convention, attempting to run SnpEff without formatting the headers first will not work
       - Even after doing this however, I still received ~70% `CHROMOSOME_NOT_FOUND` errors 
-      - From looking at the snpEff data directory, I suspect that not all chromosomes are present, or perhaps the same name refers to different chromosomes). 
-      - After rerunning snpEff with the custom-build database, all the errors disappeared
-  - **Note:** The last time this was updated was July 7 2023, so this might not be necessary if snpEff has updated their database
+      - From looking at the SnpEff data directory, I suspect that not all chromosomes are present, or perhaps the same name refers to different chromosomes). 
+      - After rerunning SnpEff with the custom-build database, all the errors disappeared
+  - **Note:** The last time this was updated was July 7 2023, so this might not be necessary if SnpEff has updated their database
 - **Steps***
   - Download the GenBank file for the the GCF_000961545 reference
-    - The easiest way to do this is with the NCBI's `datasets` CLI tool (downloading directly from the webpage would always give me a corrupted zip file)
+    - The easiest way to do this is with the NCBI's `datasets` CLI tool (downloading directly from the web page would always give me a corrupted zip file)
 ```bash
 datasets download genome accession GCF_000961545.1 --include gbff
 ```
-  - Update the snpEff config file, located in the snpEff installation directory with the new genome
+  - Update the SnpEff config file, located in the SnpEff installation directory with the new genome
 ```config
 #---
 # Databases are stored here
@@ -92,15 +92,15 @@ datasets download genome accession GCF_000961545.1 --include gbff
 customGCF000961545.genome : Sporothrix schenckii # The format is <custom_genome_name>.genome : <species>
 #
 # You can use tilde ('~') as first character to refer to your home directory. 
-# Also, a non-absolute path will be relative to config's file dir
+# Also, a non-absolute path will be relative to config's file tar
 # 
 #---
-data.dir = ./data/ # This is where you specify the data directory, in the snpEff installation diretory by default
+data.dew = ./data/ # This is where you specify the data directory, in the SnpEff installation directory by default
 ```
- - Make a directory in the snpEff data directory with the name used for the custom genome in the config, e.g. `mkdir customGCF000961545` in my example
+ - Make a directory in the SnpEff data directory with the name used for the custom genome in the config, e.g. `mkdir customGCF000961545` in my example
  - Rename the genome gbff to `genes.gbk`
  - Run `java -jar <snpEff jar> build -genbank -v <custom_genome_name>`
- - You can now use the custom genome with snpEff by using `<custom_genome_name>` in any commands
+ - You can now use the custom genome with snpEff by specifying `<custom_genome_name>` in any commands
 
 ### BUSCO gene extraction
 - **Input**
@@ -113,7 +113,7 @@ data.dir = ./data/ # This is where you specify the data directory, in the snpEff
 - 1. A script (`busco_to_gff.sh`) was written to map every single-copy BUSCO gene to a gene described in the gff file, obtaining a more precise range in the process.
     - The gene table was filtered to leave only the genes that were shared by every sample (3186 genes). A list of these shared genes was created by processing the output tables with a python script
 * 2. Liftoff: Lift over genome annotations from GCF_000961545 reference gff onto scaffolds, generating a lifted gff file
-* 3. awk: Use the BUSCO-gff mapping from step 1. to filter the single-copy BUSCO genes from the lifted gffs, generating a tsv file with their new locations on the lifted gff*
+* 3. awk: Use the BUSCO-gff mapping from step 1. to filter the single-copy BUSCO genes from the lifted gffs, generating a TSV file with their new locations on the lifted gff*
     + *The original BUSCO output table describes the BUSCO gene locations specific for the GCF_000961545 reference. Their locations may be different with each assembly
 * 4. gffread: Extract the sequences of the BUSCO genes in fasta format using the coordinates specified from the previous file. Every gene is stored in a separate fasta file
     - Initially, I tried obtaining the sequences of the common BUSCO genes for multiple sequence alignment by using the BUSCO transcripts from the Maker assessment (in the `<busco_output_folder>/<run_lineage>/busco_sequences/single_copy_busco_sequences` folder) directly, but the result was odd: ~40% of the genes had identical sequences between samples.
@@ -125,9 +125,25 @@ data.dir = ./data/ # This is where you specify the data directory, in the snpEff
 
 ## GO Annotation and enrichment analysis
 The enrichment analysis here is to determine if any GO terms are associated with genes found to have significant variants
-Narrowing down the gene universe for enrichment analysis was necessary
+- 1. SnpSift: Filter VCF file to keep "high" effect variants and to remove variants with warnings
+  + Variant effects in SnpEff are described using the [Sequence Ontology](http://www.sequenceontology.org/browser/obob.cgi) terminology, and the impact categories are defined by the SnpEff developers themselves
+  + The exact documentation for SnpEff's VCF files can be found [here](http://pcingola.github.io/SnpEff/adds/VCFannotationformat_v1.0.pdf)
+  + "High" effects refers to variants that cause a significant degree of sequence divergence, including copy number variants, exon losses, frameshifts, rare amino acids, stop/start codon variants, splice site variants, transcript ablation.
+- 2. R: Add GO terms into the annotation field of the VCF file
+  + The mapping file generated by the Python script obtains GO annotations for the gene by querying UniProt for the gene (necessary because the NCBI doesn't store associated GO annotations in the Gene database). 
+  + Genes with uncharacterized protein products are unlikely to have any GO annotations
+    + 38% of *S. schenckii* genes in the VCF file have no annotations
+- 3. R: Format list of genes and their GO annotations for enrichment analysis
+  + This is simply a script to prepare the input files for Ontologizer, which filters out genes from the samples' variant stats table file
+- 4. Ontologizer: Perform enrichment analysis on the gene list
+  + The gene population was defined as all genes that had variants and GO annotations
+  + The study set was defined was genes in the upper quartile of "high" variants
+  + Ontologizer was run on the samples using the parent-child variant of Fisher's exact test, which, unlike Fisher's, is able to take into account the relational structure of the GO ontology (Bauer et al., 2008). 
+    * Since a gene annotated to a given term *t* is also annotated to the parent terms of *t*, the probability that *t* is enriched is increased if one of *t*'s parents is enriched. The interaction between parent and sibling terms thus violates the assumption of independence in Fisher's test.
+  + Given the high number of genes being tested in my sample, (6314 in the population, 1524 in the study set), I added the flag for multiple testing correction in Ontologizer (using Bonferroni correction). The unadjusted p-values will appear in the column besides the corrected ones.
 
 # References
+* Ashburner et al. Gene ontology: tool for the unification of biology. Nat Genet. 2000 May;25(1):25-9. DOI: 10.1038/75556 [abstract | full text]
 - Assembly [Internet]. Bethesda (MD): National Library of Medicine (US), National Center for Biotechnology Information; [1988] – . Accession No. GCF_000961545.1, S_schenckii_v1reference; [cited 2023 Jun 23]. Available from: https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000961545.1/
 - Assembly [Internet]. Bethesda (MD): National Library of Medicine (US), National Center for Biotechnology Information; [1988] – . Accession No. GCF_000820605.1 S_brasiliensis_5110_v1; [cited 2023 Jun 23]. Available from: https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000820605.1/
 - Assembly [Internet]. Bethesda (MD): National Library of Medicine (US), National Center for Biotechnology Information; [1988] – . Accession No. GCA_016097105.2, SVAR_v1.1; [cited 2023 Jun 23]. Available from: https://www.ncbi.nlm.nih.gov/assembly/GCA_016097105.2/
@@ -159,12 +175,14 @@ Narrowing down the gene universe for enrichment analysis was necessary
 - Lomsadze, A., Ter-Hovhannisyan, V., Chernoff, Y. O., & Borodovsky, M. (2005). Gene identification in novel eukaryotic genomes by self-training algorithm. Nucleic Acids Research, 33(20), 6494–6506. https://doi.org/10.1093/nar/gki937
 - McKenna, A., Hanna, M., Banks, E., Sivachenko, A., Cibulskis, K., Kernytsky, A., Garimella, K., Altshuler, D., Gabriel, S., Daly, M., & DePristo, M. A. (2010). The Genome Analysis Toolkit: A MapReduce framework for analyzing next-generation DNA sequencing data. Genome Research, 20(9), 1297–1303. https://doi.org/10.1101/gr.107524.110
 - Prjibelski, A., Antipov, D., Meleshko, D., Lapidus, A., & Korobeynikov, A. (2020). Using SPAdes De Novo Assembler. Current Protocols in Bioinformatics, 70(1), e102. https://doi.org/10.1002/cpbi.102
+* Sebastian Bauer and others, Ontologizer 2.0—a multifunctional tool for GO term enrichment analysis and data exploration, Bioinformatics, Volume 24, Issue 14, July 2008, Pages 1650–1651, https://doi.org/10.1093/bioinformatics/btn250
 - Seppey, M., Manni, M., & Zdobnov, E. M. (2019). BUSCO: Assessing Genome Assembly and Annotation Completeness. Methods in Molecular Biology (Clifton, N.J.), 1962, 227–245. https://doi.org/10.1007/978-1-4939-9173-0_14
 - Shen, W., Le, S., Li, Y., & Hu, F. (2016). SeqKit: A Cross-Platform and Ultrafast Toolkit for FASTA/Q File Manipulation. PLOS ONE, 11(10), e0163962. https://doi.org/10.1371/journal.pone.0163962
 - Smith, M.R. (2020a). Information theoretic Generalized Robinson-Foulds metrics for comparing phylogenetic trees. Bioinformatics 36: 5007–5013. doi: 10.1093/bioinformatics/btaa614
 - SRA [Internet]. Bethesda (MD): National Library of Medicine (US), National Center for Biotechnology Information; [1988] – . Accession No. SRX6367452; GSM3905740: Sample 1: hyphal form of S. schenckii; Sporothrix schenckii; RNA-Seq ;[cited 2023 Jun 23]. Available from: https://www.ncbi.nlm.nih.gov/sra/SRX6367452
 - Stanke, M., & Morgenstern, B. (2005). AUGUSTUS: A web server for gene prediction in eukaryotes that allows user-defined constraints. Nucleic Acids Research, 33(suppl_2), W465–W467. https://doi.org/10.1093/nar/gki458
 - Ter-Hovhannisyan, V., Lomsadze, A., Chernoff, Y. O., & Borodovsky, M. (2008). Gene prediction in novel fungal genomes using an ab initio algorithm with unsupervised training. Genome Research, 18(12), 1979–1990. https://doi.org/10.1101/gr.081612.108
+* The Gene Ontology Consortium. The Gene Ontology knowledgebase in 2023. Genetics. 2023 May 4;224(1):iyad031. DOI: 10.1093/genetics/iyad031 [abstract | full text]
 - The UniProt Consortium. (2023). UniProt: The Universal Protein Knowledgebase in 2023. Nucleic Acids Research, 51(D1), D523–D531. https://doi.org/10.1093/nar/gkac1052
 - Wingett, S. W., & Andrews, S. (2018). FastQ Screen: A tool for multi-genome mapping and quality control. F1000Research, 7, 1338. https://doi.org/10.12688/f1000research.15931.2
 - Yandell, M., & Ence, D. (2012). A beginner’s guide to eukaryotic genome annotation. Nature Reviews Genetics, 13(5), 329–342. https://doi.org/10.1038/nrg3174

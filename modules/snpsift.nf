@@ -11,7 +11,7 @@ process SNPSIFT {
     script:
     """
     snpsift_wrapper.sh $pair_id $annotations $params.snpsift_jar
-    Rscript ${pair_id}_annotated_vars.vcf $params.go_annotations_ref
+    Rscript $bin/go_anno.r ${pair_id}_annotated_vars.vcf $params.go_annotations_ref
     """
     //
 }

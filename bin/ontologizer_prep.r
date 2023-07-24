@@ -4,7 +4,7 @@ library(tidyverse)
 args <- commandArgs(trailingOnly = TRUE)
 go_csv <- args[2]
 stat_file <- args[1]
-go_mapping <- read.csv(args[2]) %>%
+go_mapping <- read.csv(go_csv) %>%
   filter(GO != "None")
 stat_header <- strsplit(readLines(stat_file)[2], split = "\t") %>% unlist()
 match <- regexec(".*/(.*)_.*", stat_file)
@@ -16,7 +16,7 @@ population <- read.table(stat_file, sep = "\t") %>%
 writeLines(population$GeneId, glue("{sample_name}_population.txt"))
 
 sample <- population %>%
-  filter(variants_impact_HIGH > 0)
+  filter(variants_impact_HIGH > quantile(variants_impact_HIGH, 0.75))
 writeLines(sample$GeneId, glue("{sample_name}_interest.txt"))
 
 header <- "GoStat IDs Format Version 1.0"
