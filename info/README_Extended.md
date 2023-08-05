@@ -4,23 +4,34 @@
   - Reference genome fasta and gff for *Sporothrix schenckii*, GCF_000961545.1
   - mtDNA reference
 - 1. FastQC, MultiQC: Evaluate raw paired-end fastq files
-    * FastQC provides information about read quality, overrepresented sequences, adapter content and other statistics on a per-fastq-file basis; MultiQC collates the information from multiple FastQC report files for convenience.
+    * [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) provides information about read quality, overrepresented sequences, adapter content and other statistics on a per-fastq-file basis; MultiQC collates the information from multiple FastQC report files for convenience.
+      - The quality evaluation here determines the corrections you should make to the raw files before assembly (the next step). Some common corrections include read trimming, as quality* drops heavily as the length increases, and adapter trimming.
+        - *For [Illumina](https://www.illumina.com/Documents/products/technotes/technote_Q-Scores.pdf) devices, quality is measured with the Phred scoring system, and the higher the score for a given base, the lower the probability that the base was identified/called incorrectly. A score of 30 (Q30) is a commonly used threshold,  corresponding to a 99.9% base call accuracy.
+    * FastQC produces an HTML report file providing either a green (passed), yellow (warning) or red (fail) flag at each assessment. While some red flags can be addressed (e.g. fails for read quality, adapter content), those that cannot (e.g. Per sequence GC content, Sequence Duplication levels) aren't necessarily indicative of sample preparation errors. See the [Galaxy Project's tutorial](https://training.galaxyproject.org/training-material/topics/sequence-analysis/tutorials/quality-control/tutorial.html#assess-quality-with-fastqc---short--long-reads) for more details.
+     
 - 2. FastP: Trim adapters and poly g (identified as a contaminant in prior step).
     * FastP is an all-purpose quality control tool that can perform adapter removal, read trimming and base correction
 - 3. BBduk: Filter mtDNA
-  - A kmer-based quality control tool, BBduk was used here for the function of filtering out reads that match strongly to a set of query sequences (mtDNA in this case).
-  - The kmer size setting for BBduk was set to the maximum of `k=31` to make filtering as stringent as possible
+  - A kmer-based quality control tool, BBduk was used here for the function of filtering out reads that match strongly to a set of query sequences (mtDNA in this case). The [tool's documentation](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/bbduk-guide/) has more usage examples
+    - A kmer is simply a subsequence of DNA sequence that is *k* nucleotides long, and is a structure used in many bioinformatics tools. With BBduk, longer kmers correspond to higher stringency, as two sequences must share more bases to match. 
+  - The kmer size setting for BBduk was set to the maximum of `k=31` to make filtering as stringent as possible. 
   - mtDNA filtering was added when in a previous iteration of the workflow, some of the output contigs were found to align to *Sporothrix* mtDNA. Initially, filtering was carried out post-assembly by using Minimap2 alignments to remove sequences that had mapped to the mtDNA. This broke up the contigs though, as they had mistakenly incorporated the mtDNA sequences into the assembly of valid chromosomes.
     * BBduk's filtering efficiency was validated by aligning the mtDNA with the filtered assembly with Minimap2 as before, and obtaining no alignments, indicating that all mtDNA sequences had been removed
 - 4. Spades, Megahit: Assemble reads
-  - Both ran in default settings
+  - Both ran in default settings.
 - 5. BUSCO, Quast: Assess assembly quality
-  - BUSCO was set to use the `sordariomycetes_odb10` lineage in `genome` mode, while Quast was provided with the reference genome
+  - BUSCO ([Benchmarking Universal Single-Copy Orthologue](https://busco.ezlab.org/)) is a tool that assesses an assembly's completeness by checking for the presence of universal conserved genes in the assembly. The BUSCO genes can either be found complete and single-copy in an assembly, complete and duplicated, fragmented or absent. The significance of these results are context-dependent, see the [BUSCO user guide](https://busco.ezlab.org/busco_userguide.html#interpreting-the-results) for help with interpretation
+    - Various sets of BUSCO genes (derived from the [OrthoDB](http://www.orthodb.org/) database) are available, but the most specific lineage to the study organism should be chosen to so that the presence of lineage-specific genes is tested.
+  - [Quast](https://github.com/ablab/quast) meanwhile, assesses assembly quality by comparing the assembly against a reference. It provides measures of contiguity (e.g. N50 score) and similarity of assembly to the reference.
+    - One way of interpreting contiguity is that for the same genome size, a more contiguous assembly is made up of less, but longer contigs. 
+  - BUSCO was set to use the `sordariomycetes_odb10` lineage in `genome` mode, while Quast was provided with the GCF_000961545.1 reference genome
       - BUSCO needs to be set in `offline` mode or else it will download the given lineage database automatically in the directory of each run
       - Quast can assess several assemblies at once for comparison purposes
-  - The Megahit assemblies produced more contiguous sets of contigs and had higher BUSCO completeness, so these were selected for downstream analysis.
-  - Transcriptome assembly was performed in much the same way as genome assembly, except mtDNA was not filtered, RNAspades was used as the assembler and finally BUSCO was set in `transcriptome` mode
+  - The Megahit assemblies produced more contiguous sets of contigs* and had higher BUSCO completeness, so these were selected for downstream analysis.
+    - *A contig is a sequence that has been assembled by joining together overlapping short reads.
+    - Transcriptome assembly was performed in much the same way as genome assembly, except mtDNA was not filtered, RNAspades was used as the assembler and finally BUSCO was set in `transcriptome` mode
 - 6. Ragout:  Assemble contigs into scaffolds*
+  - Sometimes the final contigs of an assembler are highly fragmented, made up of hundreds or even thousands of contigs; scaffolding is the process of linking these contigs together into longer units (scaffolds). With the assemblies in this study, scaffolding improved BUSCO completeness (up to ~5%, increasing the number of complete BUSCO genes) but also greatly speeds up the annotation process.
   - Ragout was provided with the GCF_000961545.1 reference sequence to scaffold from, and run on default settings
       * The paths to files are given to Ragout with an `rcp` file, (an example can be found [here](./info/recipe.rcp)). A python script was used to automate writing this file from the command line
   - Several scaffolding tools - ntJoin, sspace, CAP3, RagTag and Ragout - were tested on the highly fragmented sample 2 Megahit contigs (7,639 sequences) before implementing for this step. Regardless of the flags used, Sspace and ntJoin showed no reduction in contig number; CAP3 reduced it by ~ 600 contigs. The reference-based RagTag showed promise, reducing down to  529 sequences. However, Ragout had the best performance (at the cost of speed), generating 13 scaffolds and was chosen.
@@ -30,30 +41,37 @@
 - 8. Samtools: Extract scaffolds from sam file into separate fasta files for each chromosome
     - *Scaffolding and separating the results by chromosome was necessary to take advantage of nextflow's innate parallelization and reduce the time taken for genome annotation.
 - **Output:** genome assemblies for each sample, split into fasta files for each chromosome present in the reference sequence
-
+     
 ## Genome annotation
+Yandell & Ence (2012)  provide a friendly introduction to the concepts and procedures involved in genome annotation and most of the notes here are based on their [paper](https://eaton-lab.org/slides/genomics/readings/Yandell-etal-2012.pdf).
 - **Input:**
   - Genemarks hmm files for each sample, trained in-house with GenemarksES
-  - Augustus species model trained with the Augustus web server on the GCF_000961545.1 reference
+  - Augustus species model trained with the Augustus web server* on the GCF_000961545.1 reference
+    - Augustus and Genemarks are ab-initio gene predictors, using sequence characteristics (such as the presence of conserved gene motifs e.g. exon/intron boundaries) for gene prediction
       * Training Augustus dynamically with the scaffolds of each sample would simply take too long, especially during the optimization step.
   - A database of repeat elements, generated by combining the TREP database with models produced in-house by RepeatModeler on 8 *Sporothrix* species (*S. brasiliensis*, *S. globosa* CBS strain, *S. globosa* strain SS01, *S. humicola*,
 *S inflata*, *S. protearum*, *S. schenckii* and *S. variecibatus*)
-      * I did not plan on using 8 species for this step, but decided upon it after having received only 18 repeat element predictions from the *S. schenckii* genome. While this (and using the TREP database) may seem gratuitous, I believe lack of access to RepBase and the highly confounding effects that repeat elements have on ab initio gene predictions justify it (Yandell & Ence, 2012).
-  - est evidence: includes the previously assembled transcriptome in addition to known *Sporothrix* genes collected from the NCBI nucleotide database with query `txid29907[Organism:exp] AND biomol_mrna[PROP]`
-  - Repeat proteins provided with the Maker download
-  - gff evidence from the GCF_000961545.1 reference
-  - Protein evidence collected from UniProt Release 2023_02 with query `Sporothrix`
+    - With this information, genome sequences homologous to any repeat elements will be masked prior to annotation, which "hides" them from gene predictors. This will prevent them from being recognized as genes and producing false positive predictions
+    * I did not plan on using 8 species for this step, but decided upon it after having received only 18 repeat element predictions from the *S. schenckii* genome. While this (and using the TREP database) may seem gratuitous, I believe lack of access to RepBase and the highly confounding effects that repeat elements have on ab initio gene predictions justify it (Yandell & Ence, 2012).
+    - These repeat elements were also supplemented with repeat proteins provided with the Maker download
+  - Data for evidence-driven prediction
+    - Genome annotation tools also make use of existing sequence data (termed "evidence") to make alignment-based gene predictions
+    - est evidence: includes the previously assembled transcriptome in addition to known *Sporothrix* genes collected from the NCBI nucleotide database with query `txid29907[Organism:exp] AND biomol_mrna[PROP]`
+    - gff evidence from the GCF_000961545.1 reference
+      - A generic feature format (gff) file stores information about genome features (e.g. genes, introns, exons), mapping each feature to a specific chromosome range. See [here](https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md) for details about the file structure
+    - Protein evidence collected from UniProt Release 2023_02 with query `Sporothrix`
 - 1. Maker: First round of Maker annotation, using est, gff, protein, repeat evidence and Genemarks model
 - 2. SNAP: Train SNAP on the output from the first round of annotation.
+  * SNAP is another ab initio gene predictor, and is used as part of the pipeline (rather than an input) because it is fast and can be trained using gff files (i.e. the maker output) as input (unlike Genemarks). Augustus is capable of this as well, but as alluded to earlier, it is prohibitively slow with the hardware that this pipeline was developed on.
 - 3. Maker: Second round of annotation, disabling all evidence-based annotation and using Snap and Augustus for gene prediction only. This was set up so Maker would  populate its annotations with the gff file from the first round
     * Example of options [here](./info/maker_opts.ctl_Round2)
-- 4. Snap: Second round of SNAP training, using the Maker's second round output
+- 4. SNAP: Second round of SNAP training, using the Maker's second round output
     * The commands are the same as used in training SNAP in the first round
 - 5. Maker: Final round of annotation with the most recent SNAP model
     * The maker options are the same as in the second round, just with the updated SNAP model
-- 6. Maker, Seqkit: Extract Maker's final gff and fasta transcripts using the tools packaged with Maker, combine the each scaffolds' annotations into a single file and remove duplicates with Seqkit
-- 7. BUSCO: Assess BUSCO completeness of final transcripts with BUSCO in `transcriptome` mode
-- The two rounds additional of Maker are only for retraining SNAP to improve its predictions, given that the Genemarks and Augustus models do not change. This three--round structure is the standard protocol to avoid overtraining the predictors and because additional rounds beyond this are usually redundant (Campbell et al., 2014).
+- 6. Maker, Seqkit: Extract Maker's final gff and protein + RNA transcripts (in fasta format) using the tools packaged with Maker, combine the each scaffolds' annotations into a single file and remove duplicates with Seqkit
+- 7. BUSCO: Assess BUSCO completeness of final RNA transcripts with BUSCO in `transcriptome` mode
+- The two rounds additional of Maker are only for retraining SNAP to improve its predictions, given that the Genemarks and Augustus models do not change. This three-round structure is the standard protocol to avoid overtraining the predictors and because additional rounds beyond this are usually redundant (Campbell et al., 2014).
 - **Output:** gff files containing annotations for each sample, with predicted transcripts and proteins in fasta format.
 
 ## Variant calling and identification
@@ -69,16 +87,15 @@
 - The `bin` directory contains python scripts for extracting single-copy BUSCO gene sequences from BUSCO output and combining them across samples
 
 #### Building SnpEff database
-- Although using the downloadable databases is recommended SnpEff does provide a way for users to construct their own database
-- **Reasoning**
-  - The GCF_000961545 reference downloadable from SnpEff uses different chromosome headers (e.g. `Cont39`, `Cont41`) to that of the NCBI (e.g. `NW_015971139.1)`. 
+- SnpEff is a tool that categorizes the variants in a VCF file and predicts their effects on gene function, taking as input a database constructed from the organism's reference genome. 
+  - SnpEff's official downloadable *S. schenckii* dataset (with the GCF_000961545 reference) uses different chromosome headers (e.g. `Cont39`, `Cont41`) to that of the NCBI (e.g. `NW_015971139.1)`. 
     - Since the VCF file was generated using the latter convention, attempting to run SnpEff without formatting the headers first will not work
       - Even after doing this however, I still received ~70% `CHROMOSOME_NOT_FOUND` errors 
       - From looking at the SnpEff data directory, I suspect that not all chromosomes are present, or perhaps the same name refers to different chromosomes). 
-      - After rerunning SnpEff with the custom-build database, all the errors disappeared
-  - **Note:** The last time this was updated was July 7 2023, so this might not be necessary if SnpEff has updated their database
-- **Steps***
-  - Download the GenBank file for the the GCF_000961545 reference
+- Fortunately, SnpEff does provide a way for users to build their own database. After rerunning SnpEff with this custom database, all errors disappeared
+  - **Note:** The last time this was updated was July 7 2023, so this might not be necessary if SnpEff has updated their downloads
+- **Steps**
+  - Download the GenBank file for the GCF_000961545 reference
     - The easiest way to do this is with the NCBI's `datasets` CLI tool (downloading directly from the web page would always give me a corrupted zip file)
 ```bash
 datasets download genome accession GCF_000961545.1 --include gbff
@@ -103,6 +120,8 @@ data.dew = ./data/ # This is where you specify the data directory, in the SnpEff
  - You can now use the custom genome with snpEff by specifying `<custom_genome_name>` in any commands
 
 ### BUSCO gene extraction
+The aim of this procedure was to locate each single-copy BUSCO gene in the genome, using them to construct a multiple sequence alignment to determine the phylogenetic distance between each sample. BUSCO's output folders specify the locations of each gene in the assembly, but I found these ranges to be too broad: those that I reviewed were far longer than the actual gene length
+- The steps listed below overcome this problem by mapping BUSCO genes to genes specified in the NCBI's gff file. Then, a liftover tool is used to find the new locations of the NCBI genes (and thus the BUSCO genes) in the sample assemblies.
 - **Input**
     - GCF_000961545 reference gff and fasta file
     - BUSCO output tables for each assembly
@@ -110,9 +129,10 @@ data.dew = ./data/ # This is where you specify the data directory, in the SnpEff
 - **Output**
     * Multiple sequence alignments for all common single-copy BUSCO genes
     * KALLISTO tables describing the abundance of each single-copy gene
-- 1. A script (`busco_to_gff.sh`) was written to map every single-copy BUSCO gene to a gene described in the gff file, obtaining a more precise range in the process.
+- 1. A script (`busco_to_gff.sh`) was written to map every single-copy BUSCO gene to a gene described in the gff file, obtaining a more precise range in the process. To use the script, you need to first run BUSCO on the NCBI's reference genome fasta file.
     - The gene table was filtered to leave only the genes that were shared by every sample (3186 genes). A list of these shared genes was created by processing the output tables with a python script
 * 2. Liftoff: Lift over genome annotations from GCF_000961545 reference gff onto scaffolds, generating a lifted gff file
+    - "Lifting over" annotations means finding the locations of genome features specified by a reference in an assembly (if they are present), then creating an  annotation file for the assembly based on this correspondence.
 * 3. awk: Use the BUSCO-gff mapping from step 1. to filter the single-copy BUSCO genes from the lifted gffs, generating a TSV file with their new locations on the lifted gff*
     + *The original BUSCO output table describes the BUSCO gene locations specific for the GCF_000961545 reference. Their locations may be different with each assembly
 * 4. gffread: Extract the sequences of the BUSCO genes in fasta format using the coordinates specified from the previous file. Every gene is stored in a separate fasta file

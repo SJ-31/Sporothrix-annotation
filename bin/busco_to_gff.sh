@@ -1,10 +1,9 @@
 #!/bin/bash
 # Map busco genes to their locations on a gff file and their ncbi counterparts
-name=$1
-busco_ref=$2
-gff=$3
-fasta=$4
-output=$5
+busco_ref=$1 # The "full_table.tsv" file from running BUSCO on the NCBI reference  fasta file
+gff=$2 # The NCBI reference gff
+fasta=$3 # The NCBI reference fasta
+output=$4 # Output file name
 info="#BUSCO ID\tType\tSequence\tStart\tStop\tNCBI descriptor\tBUSCO descriptor"
 echo -e "$info" > "$output"
 
