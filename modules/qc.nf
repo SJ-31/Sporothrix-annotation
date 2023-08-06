@@ -1,5 +1,5 @@
 process QC {
-    publishDir "$outdir/reports/$pair_id", mode: 'copy'
+    publishDir "$outdir/4-reports/$pair_id", mode: 'copy'
 
     input:
     tuple (val(pair_id),

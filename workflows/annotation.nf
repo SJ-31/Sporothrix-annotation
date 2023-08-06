@@ -8,15 +8,11 @@ include { MAKER_R as MAKER_R3 } from "../modules/maker"
 include { SNAP } from "../modules/snap"
 include { SNAP as SNAP2 } from "../modules/snap"
 include { GENEMARKS_ES } from "../modules/genemarksES"
-include { AUGUSTUS; AUGUSTUS_MAKER } from "../modules/augustus"
 include { BUSCO } from "../modules/busco"
-include { FIND_BUSCO } from "../modules/find_buscos"
 
 /*
  * Workflow
  */
-
-
 workflow train_genemarks {
     take:
     scaffolds
@@ -88,13 +84,4 @@ workflow annotation {
 
     // Verify transcripts
     BUSCO(merged.filter { it[1] =~/transcripts/ }, 'transcriptome', params.annotation)
-}
-
-workflow get_buscos {
-    take:
-    busco_dir
-
-    main:
-    FIND_BUSCO(busco_dir)
-    // Unsure now which busco genes to get
 }

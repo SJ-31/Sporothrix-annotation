@@ -37,7 +37,7 @@ workflow assembly {
         assemblies.flatten().branch {
             fasta: it =~/fasta/
         }.set { genomes }
-        // QUAST(genomes.fasta.collect(), "$params.assemblies/4-assess_assemblies",
-        // params.quastRef,
-        // params.quastRefF, params.quast_args)
+        QUAST(genomes.fasta.collect(), "$params.assemblies/4-assess_assemblies",
+        params.reference,
+        params.ref_gff, params.quast_args)
 }

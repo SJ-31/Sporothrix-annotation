@@ -204,6 +204,41 @@ kallisto quant -i index -o <sample_quantified> <reads1> <reads2> # The "-o" flag
   + The gene population was defined as all genes that had variants and GO annotations
   + The study set was defined was genes in the upper quartile of "high" variants
 
+# Pipeline usage 
+
+## Parameters
+Each of the above procedures is controlled by the `controller.config` file, and is divided into separate workflows rather a single continuous one (set up this way due to hardware limitations). Running each procedure in order (given in `controller.config`) is thus important.
+- Instructions on how to set parameters and what each one does is in the file
+
+### `paths.config` and expectations for input data
+The `paths.config` file specifies the paths to input data and the pipeline's output
+- By default, all results files will be generated in the `results` directory where the nextflow process was run. The folders will be numbered by their order in the pipeline.
+- The **Specification:** line in the following denotes which parameter in `paths.config` a given piece of input data is denoted with in the pipeline
+  - This information will also be in the file itself
+
+- **Required files**
+- These are the files that you will need to supply yourself in order to run the pipeline
+  - DNA short reads
+    - Should paired-end in gzipped fastq format, using the standard [Illumina naming convention](https://support.illumina.com/help/BaseSpace_OLH_009008/Content/Source/Informatics/BS/NamingConvention_FASTQ-files-swBS.htm) but with the **lane number removed** 
+    - E.g. S1_R1_001.fastq.gz instead of S1_L001_R1_001.fastq.gz
+    - **Specification:** `params.raw`
+  - **RNA short reads**
+    - The RNA short reads can follow any naming convention, as long as they are paired-end, in fastq format (gzipped should work too) and suffixed with _1 or _2 
+    - **Specification:** `params.rna`
+  - **Reference genome fasta, gff and gbk files for study organism**
+    - Download from the NCBI
+  - **Reference genome fasta files from closely-related species**
+    - These are used for repeat library construction
+    - **Specification:** `params.genomes`
+  - **Augustus gene model trained on study organism reference genome**
+    - Instructions are on the [web server](https://bioinf.uni-greifswald.de/webaugustus/training/create), note that you will need to edit the default NCBI fasta headers to remove all non-alpha numeric characters. The safest bet is to just keep the chromosome id and remove everything else
+      - Default: >NW_015971139.1 Sporothrix schenckii 1099-18 chromosome Unknown Cont38, whole genome shotgun sequence
+      - Edited: >NW015971139
+    - **Specification:** place this in the Augustus data directory, which by default is `<PATH_TO_AUGUSTUS_DOWNLOAD_DIRECTORY>/config/species`
+  - **GO terminology file**
+    - Download from [here](http://geneontology.org/docs/download-ontology/). "go-basic.obo" will suffice
+    - **Specification:** `params.go_ontology`
+
 # References
 * Ashburner et al. Gene ontology: tool for the unification of biology. Nat Genet. 2000 May;25(1):25-9. DOI: 10.1038/75556 [abstract | full text]
 - Assembly [Internet]. Bethesda (MD): National Library of Medicine (US), National Center for Biotechnology Information; [1988] – . Accession No. GCF_000961545.1, S_schenckii_v1reference; [cited 2023 Jun 23]. Available from: https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000961545.1/

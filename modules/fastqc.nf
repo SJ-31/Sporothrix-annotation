@@ -1,5 +1,3 @@
-
-
 process FASTQC {
     publishDir "$outdir/$run", pattern: "*.html", mode: 'copy'
 

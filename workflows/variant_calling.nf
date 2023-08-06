@@ -1,11 +1,3 @@
-/*  GATK4 Variant Calling Pipeline
- *  Author: Mohammed Khalfan < mkhalfan@nyu.edu >
- *  NYU Center for Genetics and System Biology 2020
- */
-
-// Setting some defaults here,
-// can be overridden in config or via command line
-
 /*
  * Module imports
  */
@@ -35,7 +27,6 @@ include { call_variants as call_variants_R2 } from './call_round'
 include { ONTOLOGIZER } from '../modules/go_enrichment.nf'
 include { SNPSIFT } from '../modules/snpsift.nf'
 
-
 workflow variant_calling {
     take:
     refs
@@ -63,7 +54,7 @@ workflow variant_calling {
             .set { round2 }
         MERGE_VARIANTS(round2.snps_ch, round2.indels_ch, params.vc)
             .set { merged }
-        VCF_GET_REGION(merged, "$params.vc/gene_vars", params.gene_locs)
+        VCF_GET_REGION(merged, "$params.vc/4-gene_vars", params.gene_locs)
         QC(mds.dedup_qc_ch.join (metrics_qc_ch).join (round1.snps_ch)
         .join (round2.snps_ch),
            params.vc)
@@ -71,16 +62,11 @@ workflow variant_calling {
         FREEBAYES(aligned_reads_ch, ref_path, params.vc)
             .set { merged }
     }
-    SNPEFF(merged, "$params.vc/1-snpeff")
+    // Classify variants and perform go enrichment
+    SNPEFF(merged, "$params.vc/6-snpeff")
         .set { snpeff_ch }
-    SNPSIFT(snpeff_ch.vcf, "$params.vc/2-snpsift")
-    ONTOLOGIZER(snpeff_ch.info, "$params.vc/3-GO_enrichment")
-
-    // ANALYZECOVARIATES(bqsr_ch.analyze_covariates_in_ch)
-    //     .set { analyzed_covariates_ch }
-    /* Process qc creates a report for each sample.
-    * Below we compile these into a single report.
-    */
+    SNPSIFT(snpeff_ch.vcf, "$params.vc/7-snpsift")
+    ONTOLOGIZER(snpeff_ch.info, "$params.vc/8-GO_enrichment")
 }
 
 workflow extract_buscos {
@@ -96,10 +82,10 @@ workflow extract_buscos {
     Channel.fromFilePairs("$clean_path/B-S*_R{1,2}_001.fastq.gz")
     .map { it -> [ it[0].replaceAll(/.*-/, ''), it[1] ]}
         .set { reads_ch }
-    LIFTOFF(assembly_ch, ref_path, params.vc_refgff, "$params.vc/1-lifted_over")
+    LIFTOFF(assembly_ch, ref_path, params.ref_gff, "$params.busco_extract/1-lifted_over")
         .set { lift_ch }
     GFF_BUSCO_MAP(lift_ch, params.busco_gff,
-    "$params.vc/2-liftover_busco_mapping")
+    "$params.busco_extract/2-liftover_busco_mapping")
         .set { busco_locs_ch }
     BUSCO_FROM_GFF(busco_locs_ch)
     .tap { per_sample_ch }
@@ -108,16 +94,16 @@ workflow extract_buscos {
     .groupTuple()
         .set { single_copy_buscos }
     COMBINE(single_copy_buscos.mix(per_sample_ch),
-    "$params.vc/3-combined_genes").exists.branch {
+    "$params.busco_extract/3-combined_genes").exists.branch {
         per_sample: it =~ /S.*/
         all_samples: true
     }.set { combined_ch }
     combined_ch.per_sample
     .map { it -> [ it.baseName.replaceAll(/_.*/, ''), it]}
         .set { per_sample }
-    MAFFT(combined_ch.all_samples, "$params.vc/4-busco_genes_MSA")
+    MAFFT(combined_ch.all_samples, "$params.busco_extract/4-busco_genes_MSA")
         .set { msa_ch }
-    NJ(msa_ch, params.reftree, "$params.vc/5-neighbor_joining")
-    CONS(msa_ch, "$params.vc/5-consensus")
-    KALLISTO(per_sample.join(reads_ch), "$params.vc/5-quantification")
+    NJ(msa_ch, params.reftree, "$params.busco_extract/5-neighbor_joining")
+    CONS(msa_ch, "$params.busco_extract/6-consensus")
+    KALLISTO(per_sample.join(reads_ch), "$params.busco_extract/7-quantification")
 }

@@ -1,5 +1,5 @@
 process MERGE_VARIANTS {
-    publishDir "$outdir/variants/$pair_id", mode: 'copy'
+    publishDir "$outdir/3-variants/$pair_id", mode: 'copy'
     input:
     tuple (val(pair_id),
 	path(snps),

@@ -1,5 +1,5 @@
 import sys
-
+# Remove unwanted characters for fasta for use with Augustus
 with open('GCF_000961545.1_S_schenckii_v1_genomic.fna') as f:
     lines = f.readlines()
 new = []

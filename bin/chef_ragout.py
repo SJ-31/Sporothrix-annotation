@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Script writing ragout rcp file
 
 import sys
 

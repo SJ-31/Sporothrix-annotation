@@ -2,26 +2,25 @@
  * Workflow imports
  */
 include { assembly } from './workflows/assembly'
-include { train_genemarks; annotation; get_buscos } from './workflows/annotation'
+include { train_genemarks; annotation } from './workflows/annotation'
 include { repeats } from './workflows/repeatlibrary'
 include { variant_calling; extract_buscos } from './workflows/variant_calling'
 include { rnaseq } from './workflows/rnaseq'
 include { scaffold; assess_scaffolds } from './workflows/finishing'
 include { clean_reads } from './workflows/clean_reads.nf'
 /*
- * Raw files for assembly, if you don't split up the dataset, will run out of memory
+ * Raw files for assembly
  */
 raw_ch = Channel.fromFilePairs("$params.raw/S*_R{1,2}_001.fastq.gz")
-rna_ch = Channel.fromFilePairs("$params.rna/*_{1,2}.fastq")
-clean_ch = Channel.fromFilePairs("$params.clean/B-S*_R{1,2}_001.fastq.gz")
+rna_ch = Channel.fromFilePairs("$params.rna/*_{1,2}.fastq.*")
+clean_ch = Channel.fromFilePairs("$params.cleaned/$params.to_assemble/B-S*_R{1,2}_001.fastq.gz")
 
 /*
- * Repeat library channels
+ * Genome channel for repeat library construction
  */
-Channel.fromPath("$projectDir/data/reference/genomes/for_repeats/*")
+Channel.fromPath("$params.genomes")
     .map { it -> [ it.baseName, it ]}
     .set { genome_ch }
-
 /*
  * Finishing channels
  */
@@ -43,7 +42,7 @@ Channel.fromPath(
     .map {it -> [ it.baseName, it ]}
     .set { chromosome_ch  }
 Channel.fromPath(
-    "$params.scaffolds/${params.current}_scaffolds.fasta")
+    "$params.scaffolds/ragout/${params.current}_scaffolds.fasta")
     .map { it -> [ it.baseName, it ] }
     .set { scaffold_ch }
 Channel.fromPath(
@@ -54,7 +53,7 @@ Channel.fromPath(
 /*
  * Variant calling channels
  */
-Channel.fromPath(params.vc_ref)
+Channel.fromPath(params.reference)
     .set { vc_ref_ch }
 Channel.fromFilePairs("$projectDir/data/cleaned_dna/${params.called_reads}/B-S*_R{1,2}_001.fastq.gz")
     .set { call_reads_ch }
@@ -83,9 +82,6 @@ workflow {
         train_genemarks(train_ch)
     if ( params.annotate_scaffold )
         annotation(chromosome_ch, scaffold_ch)
-    if ( params.collect_buscos )
-    // Combine busco gene sequences from busco runs on different sample
-        get_buscos(busco_results_ch)
 
     /*
      * Variant calling
@@ -95,5 +91,5 @@ workflow {
     if ( params.extract_busco_genes )
     // Extract busco sequences from aligned BAM file and generate a multiple sequence
     //  alignment
-        extract_buscos(params.vc_ref, params.vc_align, "$params.cleaned/*")
+        extract_buscos(params.vc_ref, "$params.scaffolds/ragout/*", "$params.cleaned/*")
 }

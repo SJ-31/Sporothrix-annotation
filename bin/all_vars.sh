@@ -24,4 +24,3 @@ done<"$to_read"
 echo -e "Gene ID\tSNPs\tINDELs\tMNPs\tOthers\tTotal" > "$counts"
 sort -nrk6 temp >> "$counts"
 rm temp
-

@@ -1,5 +1,5 @@
 process GETMETRICS {
-    publishDir "${outdir}/metrics/$pair_id", mode:'copy'
+    publishDir "${outdir}/2-metrics/$pair_id", mode:'copy'
 
     input:
     tuple val(pair_id), path(sorted_dedup_reads)

@@ -1,6 +1,6 @@
 process MARKDUPLICATESSPARK {
     tag "Calling on $pair_id"
-    publishDir "${outdir}/dedup_sorted/$pair_id", mode:'copy'
+    publishDir "${outdir}/1-dedup_sorted/$pair_id", mode:'copy'
 
     input:
     tuple val(pair_id), path(aligned_reads)
